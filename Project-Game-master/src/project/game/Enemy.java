@@ -98,6 +98,15 @@ public class Enemy {
         return new Rectangle((int) x - size / 2, (int) y - size / 2, size, size);
     }
 
+    boolean isTouching(Player player) {
+        // Sprite canvases include transparent margins, weapons and limbs.
+        // Contact damage uses the bodies, rather than the whole image rectangle.
+        double enemyBodyRadius = size * 0.25;
+        double playerBodyRadius = player.size * 0.20;
+        return hp > 0 && Math.hypot(x - player.x, y - player.y)
+                <= enemyBodyRadius + playerBodyRadius;
+    }
+
     void updateBossSkill(Player player, List<BossAttack> attacks, long time) {
         if (bossSkill != null) bossSkill.update(this, player, attacks, time);
     }

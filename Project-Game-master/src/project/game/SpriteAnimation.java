@@ -15,6 +15,22 @@ final class SpriteAnimation {
         return loadGrid(resourcePath, frameCount, 1);
     }
 
+    static SpriteAnimation loadFrames(String... resourcePaths) {
+        if (resourcePaths.length == 0) throw new IllegalArgumentException("Animation needs frames");
+        BufferedImage[] frames = new BufferedImage[resourcePaths.length];
+        for (int i = 0; i < frames.length; i++) {
+            var resource = SpriteAnimation.class.getResource(resourcePaths[i]);
+            if (resource == null) throw new IllegalStateException("Missing animation frame: " + resourcePaths[i]);
+            try {
+                frames[i] = ImageIO.read(resource);
+                if (frames[i] == null) throw new IllegalStateException("Invalid animation frame: " + resourcePaths[i]);
+            } catch (IOException exception) {
+                throw new IllegalStateException("Unable to load animation frame: " + resourcePaths[i], exception);
+            }
+        }
+        return new SpriteAnimation(frames);
+    }
+
     static SpriteAnimation loadGrid(String resourcePath, int columns, int rows) {
         try {
             BufferedImage sheet = ImageIO.read(SpriteAnimation.class.getResource(resourcePath));

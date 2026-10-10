@@ -10,6 +10,23 @@ public class VisualEffect {
     public int duration; // จำนวนเฟรมที่แสดง
     private int currentFrame = 0;
     private boolean explosion;
+    private boolean bossDeath;
+
+    private static final class BossDeathAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.loadFrames(
+                "/project/game/effects/boss-death/1.png",
+                "/project/game/effects/boss-death/6.png",
+                "/project/game/effects/boss-death/2.png",
+                "/project/game/effects/boss-death/3.png",
+                "/project/game/effects/boss-death/4.png",
+                "/project/game/effects/boss-death/5.png");
+    }
+
+    public static VisualEffect bossDeath(double x, double y, int bossSize) {
+        VisualEffect effect = new VisualEffect(x, y, (int) Math.ceil(bossSize * 0.7), Color.ORANGE, 36);
+        effect.bossDeath = true;
+        return effect;
+    }
 
     private static final class ExplosionAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.loadGrid(
@@ -42,6 +59,11 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (bossDeath) {
+            g.drawImage(BossDeathAnimation.SPRITE.frameAt(currentFrame, 6),
+                    sx - radius, sy - radius, radius * 2, radius * 2, null);
+            return;
+        }
         if (explosion) {
             g.drawImage(ExplosionAnimation.SPRITE.frameAt(currentFrame, 2),
                     sx - radius, sy - radius, radius * 2, radius * 2, null);

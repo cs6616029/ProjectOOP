@@ -227,10 +227,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         Iterator<Enemy> eIt = enemies.iterator();
         while (eIt.hasNext()) {
             Enemy enemy = eIt.next();
-            enemy.update(player.x, player.y);
 
             if (enemy.hp <= 0) {
                 if (enemy.type == EnemyType.BOSS) {
+                    visualEffects.add(VisualEffect.bossDeath(enemy.x, enemy.y, enemy.size));
                     nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
                 }
                 int gemXp = (enemy.type == EnemyType.BOSS) ? 50 : 5;
@@ -240,6 +240,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 continue;
             }
 
+            enemy.update(player.x, player.y);
+
             if (enemy.type != EnemyType.BOSS && Math.hypot(enemy.x - player.x, enemy.y - player.y) > 1200) {
                 eIt.remove();
                 continue;
@@ -248,7 +250,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             enemy.updateBossSkill(player, bossAttacks, currentTime);
 
             // แก้ไขการรับดาเมจ ให้เช็ค Invincibility Frames
-            if (enemy.getBounds().intersects(player.getBounds())) {
+            if (enemy.isTouching(player)) {
                 damagePlayer(enemy.getContactDamage());
                 if (gameOver) return;
             }

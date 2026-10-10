@@ -102,7 +102,11 @@ public class Player {
     public Player(double x, double y, CharacterType characterType) {
         this.x = x;
         this.y = y;
-        spriteScale = characterType == CharacterType.STRONG_BOY ? 1.5 : 1.0;
+        spriteScale = switch (characterType) {
+            case SURVIVOR -> 1.25;
+            case STRONG_BOY -> 1.5;
+            case IRON_GUARDIAN -> 1.0;
+        };
         idleSprite = SpriteAnimation.load(characterType.getIdleSpriteResource(), WALK_FRAME_COUNT);
         walkSprite = SpriteAnimation.load(characterType.getWalkSpriteResource(), WALK_FRAME_COUNT);
         southWalkSprite = characterType.southWalkSpriteResource == null ? walkSprite

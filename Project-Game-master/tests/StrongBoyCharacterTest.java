@@ -45,9 +45,9 @@ public class StrongBoyCharacterTest {
         }
         Player player = new Player(0, 0, Player.CharacterType.STRONG_BOY);
         check(player.getRenderSize() == 120 && player.size == 80, "Strong Boy is visually 50 percent larger with the original collision size");
-        check(new Player(0, 0).getRenderSize() == 80
+        check(new Player(0, 0).getRenderSize() == 100
                 && new Player(0, 0, Player.CharacterType.IRON_GUARDIAN).getRenderSize() == 80,
-                "Other characters keep their original visual sizes");
+                "Swordsman is 25 percent larger and Iron Guardian keeps its visual size");
         checkDirection(player, 0, 1, "southWalkSprite");
         checkDirection(player, 0, -1, "northWalkSprite");
         checkDirection(player, -1, -1, "northWalkSprite");

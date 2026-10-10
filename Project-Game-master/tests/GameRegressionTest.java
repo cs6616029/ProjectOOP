@@ -138,7 +138,7 @@ public final class GameRegressionTest {
             int frameWidth = auraSheet.getWidth() / 4;
             int drawHeight = 112 * auraSheet.getHeight() / frameWidth;
             expectedGraphics.drawImage(auraSheet.getSubimage(frameIndex % 4 * frameWidth, 0,
-                    frameWidth, auraSheet.getHeight()), 54, 110 + player.size / 2 - drawHeight, 112, drawHeight, null);
+                    frameWidth, auraSheet.getHeight()), 54, 110 + player.getRenderSize() / 2 - drawHeight, 112, drawHeight, null);
             expectedGraphics.dispose();
             check(Arrays.equals(auraImage.getRGB(0, 0, 220, 220, null, 0, 220),
                     expectedAura.getRGB(0, 0, 220, 220, null, 0, 220)),

@@ -172,12 +172,12 @@ public class LevelManager {
         // หัวข้อ Level Up
         g.setColor(Color.YELLOW);
         g.setFont(new Font("SansSerif", Font.BOLD, 36));
-        g.drawString("LEVEL UP!", screenWidth / 2 - 100, 120);
+        g.drawString("LEVEL UP!", screenWidth / 2 - 100, 95);
 
         g.setFont(new Font("SansSerif", Font.PLAIN, 18));
         g.setColor(Color.WHITE);
         String instruction = "Click an item or press 1-5 to upgrade";
-        g.drawString(instruction, screenWidth / 2 - g.getFontMetrics().stringWidth(instruction) / 2, 160);
+        g.drawString(instruction, screenWidth / 2 - g.getFontMetrics().stringWidth(instruction) / 2, 120);
 
         // แสดงผลตัวเลือก 3 ชิ้น
         for (int i = 0; i < offeredUpgrades.size(); i++) {

@@ -37,7 +37,8 @@ public final class GameStartScreen extends JPanel {
     private static final MapOption[] MAPS = {
         new MapOption("Enchanted Forest", "/project/game/Map/forest.jpg"),
         new MapOption("Desert", "/project/game/Map/desert.jpg"),
-        new MapOption("Fantasy Realm", "/project/game/Map/fantasy.jpg")
+        new MapOption("Night", "/project/game/Map/night.jpg"),
+        new MapOption("Lava", "/project/game/Map/lava.jpg")
     };
 
     private final BiConsumer<Player.CharacterType, String> onGameStart;
@@ -168,26 +169,22 @@ public final class GameStartScreen extends JPanel {
 
     private void drawMapPage(Graphics2D g) {
         drawHeader(g, "Choose Your Map", "Select where your survival begins");
-        int cardWidth = 210;
-        int cardHeight = 265;
-        int gap = 25;
-        int startX = (DESIGN_WIDTH - (cardWidth * MAPS.length + gap * (MAPS.length - 1))) / 2;
         for (int index = 0; index < MAPS.length; index++) {
-            Rectangle card = new Rectangle(startX + index * (cardWidth + gap), 200, cardWidth, cardHeight);
+            Rectangle card = mapCard(index);
             boolean selected = index == selectedMap;
             drawCard(g, card, selected, hoveredIndex == index);
             int imageX = card.x + 8;
             int imageY = card.y + 8;
             int imageWidth = card.width - 16;
-            int imageHeight = 185;
+            int imageHeight = 92;
             g.drawImage(mapPreviews[index], imageX, imageY, imageWidth, imageHeight, null);
             g.setColor(new Color(4, 10, 20, 185));
             g.fillRect(imageX, imageY + imageHeight - 34, imageWidth, 34);
             g.setColor(Color.WHITE);
             g.setFont(new Font("SansSerif", Font.BOLD, 17));
-            drawCentered(g, MAPS[index].name, card.x + card.width / 2, card.y + 221);
+            drawCentered(g, MAPS[index].name, card.x + card.width / 2, card.y + 117);
             if (selected) {
-                drawBadge(g, card.x + card.width / 2 - 42, card.y + 231, "SELECTED");
+                drawBadge(g, card.x + card.width / 2 - 42, card.y + 125, "SELECTED");
             }
         }
         drawSecondaryButton(g, new Rectangle(48, 520, 130, 48), "Back", backButtonHovered);
@@ -249,6 +246,16 @@ public final class GameStartScreen extends JPanel {
         return new Rectangle(startX + index * (cardWidth + gap), 185, cardWidth, 280);
     }
 
+    private Rectangle mapCard(int index) {
+        int columns = Math.min(3, (MAPS.length + 1) / 2);
+        int row = index / columns;
+        int rowCount = Math.min(columns, MAPS.length - row * columns);
+        int width = 210;
+        int gap = 25;
+        int startX = (DESIGN_WIDTH - (width * rowCount + gap * (rowCount - 1))) / 2;
+        return new Rectangle(startX + index % columns * (width + gap), 170 + row * 165, width, 155);
+    }
+
     private void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {
         FontMetrics metrics = g.getFontMetrics();
         g.drawString(text, centerX - metrics.stringWidth(text) / 2, baselineY);
@@ -272,11 +279,8 @@ public final class GameStartScreen extends JPanel {
                 page = Page.MAP;
             }
         } else {
-            int cardWidth = 210;
-            int gap = 25;
-            int startX = (DESIGN_WIDTH - (cardWidth * MAPS.length + gap * (MAPS.length - 1))) / 2;
             for (int index = 0; index < MAPS.length; index++) {
-                Rectangle card = new Rectangle(startX + index * (cardWidth + gap), 200, cardWidth, 265);
+                Rectangle card = mapCard(index);
                 if (card.contains(x, y)) {
                     selectedMap = index;
                     break;
@@ -307,11 +311,8 @@ public final class GameStartScreen extends JPanel {
             primaryButtonHovered = new Rectangle(622, 520, 130, 48).contains(x, y);
             backButtonHovered = new Rectangle(48, 520, 130, 48).contains(x, y);
         } else if (page == Page.MAP) {
-            int cardWidth = 210;
-            int gap = 25;
-            int startX = (DESIGN_WIDTH - (cardWidth * MAPS.length + gap * (MAPS.length - 1))) / 2;
             for (int index = 0; index < MAPS.length; index++) {
-                Rectangle card = new Rectangle(startX + index * (cardWidth + gap), 200, cardWidth, 265);
+                Rectangle card = mapCard(index);
                 if (card.contains(x, y)) {
                     hoveredIndex = index;
                 }

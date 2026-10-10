@@ -39,6 +39,26 @@ public final class BossCombatTest {
                 "/project/game/Monster/Boss/effects/BlueFlame.png"));
         Enemy previewDragon = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.DRAGON);
         Player distantPlayer = new Player(5000, 5000);
+        BufferedImage smokeSheet = javax.imageio.ImageIO.read(BossCombatTest.class.getResource(
+                "/project/game/Monster/Boss/effects/Free_Smoke_Fx_Pixel_05.png"));
+        BossAttack smoke = BossAttack.slam(previewDragon, 0, 0, 1000);
+        for (int frameIndex = 0; frameIndex < 11; frameIndex++) {
+            smoke.update(distantPlayer, 1000 + frameIndex * 45);
+            BufferedImage actual = new BufferedImage(420, 420, BufferedImage.TYPE_INT_ARGB);
+            var graphics = actual.createGraphics();
+            smoke.draw(graphics, -210, -210);
+            graphics.dispose();
+            BufferedImage expected = new BufferedImage(420, 420, BufferedImage.TYPE_INT_ARGB);
+            graphics = expected.createGraphics();
+            int height = 400 * smokeSheet.getHeight() / 64;
+            graphics.drawImage(smokeSheet.getSubimage(frameIndex * 64, 0, 64, smokeSheet.getHeight()),
+                    10, 210 - height / 2, 400, height, null);
+            graphics.dispose();
+            check(java.util.Arrays.equals(actual.getRGB(0, 0, 420, 420, null, 0, 420),
+                    expected.getRGB(0, 0, 420, 420, null, 0, 420)), "Ogre smoke plays supplied frame " + frameIndex);
+        }
+        smoke.update(distantPlayer, 1495);
+        check(smoke.isFinished(), "Ogre smoke finishes once after all eleven frames");
         for (int direction = 0; direction < 8; direction++) {
             double angle = direction * Math.PI / 4;
             BossAttack flame = BossAttack.dragonFire(previewDragon, angle, 1000);

@@ -50,6 +50,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private final List<PassiveItem> passiveItems = new ArrayList<>();
 
     private final LevelManager levelManager = new LevelManager();
+    private LevelUpEffect levelUpEffect;
+    private int displayedLevel = 1;
 
     private long gameStartTime;
     private long gameTimeMillis;
@@ -109,6 +111,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         activeKeys.clear();
 
         levelManager.reset();
+        levelUpEffect = null;
+        displayedLevel = 1;
 
         int primaryWeaponIndex = characterType.getPrimaryWeaponIndex();
         weapons.add(new SwordWeapon(primaryWeaponIndex == 0 ? 1 : 0));
@@ -365,6 +369,14 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         player.draw(dbg, cameraX, cameraY);
         drawUI(dbg);
+        long presentationTime = System.nanoTime();
+        int level = levelManager.getLevel();
+        if (level > displayedLevel) levelUpEffect = new LevelUpEffect(presentationTime);
+        displayedLevel = level;
+        if (levelUpEffect != null) {
+            if (gameOver || levelUpEffect.isFinished(presentationTime)) levelUpEffect = null;
+            else levelUpEffect.draw(dbg, player, cameraX, cameraY, levelManager.isLevelUping(), presentationTime);
+        }
     }
 
     private void drawInfiniteMap(Graphics2D g) {

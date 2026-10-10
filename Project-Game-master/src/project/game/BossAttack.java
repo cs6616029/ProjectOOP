@@ -10,6 +10,8 @@ import java.util.List;
 final class BossAttack {
     static final int SWORD_WAVE_WIDTH = 160;
     static final int SWORD_WAVE_RADIUS = 56;
+    private static final int SLAM_FRAME_COUNT = 11;
+    private static final int SLAM_FRAME_DURATION = 45;
     private final Enemy owner;
     private final double velocityX, velocityY;
     private final int radius, damage;
@@ -37,7 +39,7 @@ final class BossAttack {
         this.swordWave = swordWave;
         spawnTime = time;
         lastUpdateTime = time;
-        expiresAt = time + (slam ? 450 : 3500);
+        expiresAt = time + (slam ? SLAM_FRAME_COUNT * SLAM_FRAME_DURATION : 3500);
     }
 
     static BossAttack projectile(Enemy owner, double angle, double speed, int radius,
@@ -65,6 +67,11 @@ final class BossAttack {
                 "/project/game/Monster/Boss/effects/BlueFlame.png", 4);
     }
 
+    private static final class OgreSlamAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load(
+                "/project/game/Monster/Boss/effects/Free_Smoke_Fx_Pixel_05.png", SLAM_FRAME_COUNT);
+    }
+
     static BossAttack slam(Enemy owner, double x, double y, long time) {
         return new BossAttack(owner, x, y, 0, 0, 200, 16, Color.ORANGE, time, true, false);
     }
@@ -80,6 +87,7 @@ final class BossAttack {
         }
         if (finished) return 0;
         if (slam) {
+            lastUpdateTime = time;
             if (impactChecked) return 0;
             impactChecked = true;
             return Math.hypot(player.x - x, player.y - y) <= radius + player.size / 2.0 ? damage : 0;
@@ -109,6 +117,14 @@ final class BossAttack {
         if (finished || owner.hp <= 0) return;
         Graphics2D g = (Graphics2D) graphics.create();
         int sx = (int) (x - camX), sy = (int) (y - camY);
+        if (slam) {
+            BufferedImage frame = OgreSlamAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, SLAM_FRAME_DURATION);
+            int width = radius * 2;
+            int height = width * frame.getHeight() / frame.getWidth();
+            g.drawImage(frame, sx - width / 2, sy - height / 2, width, height, null);
+            g.dispose();
+            return;
+        }
         if (dragonFire) {
             BufferedImage image = DragonFireAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, 90);
             int width = 64;

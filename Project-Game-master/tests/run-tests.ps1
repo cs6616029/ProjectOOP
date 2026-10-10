@@ -17,6 +17,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Spawn balance checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Explosion effect checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LevelUpOptionsTest
 if ($LASTEXITCODE -ne 0) { throw 'Level-up option checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LevelUpEffectTest
+if ($LASTEXITCODE -ne 0) { throw 'Level-up animation checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.WeaponScalingTest
 if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.BossDeathEffectTest
@@ -25,3 +27,5 @@ if ($LASTEXITCODE -ne 0) { throw 'Boss death effect checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Contact damage checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.StrongBoyCharacterTest
 if ($LASTEXITCODE -ne 0) { throw 'Strong Boy character checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.MapSelectionTest
+if ($LASTEXITCODE -ne 0) { throw 'Map selection checks failed' }

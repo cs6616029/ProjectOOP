@@ -234,7 +234,7 @@ public final class GameRegressionTest {
         check(true, "Concurrent restart and frames complete without collection errors");
 
         for (Player.CharacterType character : Player.CharacterType.values()) {
-            for (String map : new String[]{"forest", "desert", "fantasy"}) {
+            for (String map : new String[]{"forest", "desert", "night", "lava"}) {
                 game = new VampireSurvivorsGame(character, "/project/game/Map/" + map + ".jpg");
                 call(game, "updateGame");
                 call(game, "renderToBuffer");

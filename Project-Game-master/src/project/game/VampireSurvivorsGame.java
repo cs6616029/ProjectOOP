@@ -45,6 +45,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Gem> gems = new ArrayList<>();
     private final List<VisualEffect> visualEffects = new ArrayList<>();
+    private final List<BossAttack> bossAttacks = new ArrayList<>();
     private final List<Weapon> weapons = new ArrayList<>();
     private final List<PassiveItem> passiveItems = new ArrayList<>();
 
@@ -56,8 +57,9 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private long activeTimeNanos;
     private long elapsedSeconds = 0;
     private long lastBossSpawnMinute = 0;
+    private long nextBossSpawnSeconds = SpawnBalance.FIRST_BOSS_SECONDS;
     private long lastSpawnTime = 0;
-    private long spawnInterval = 700;
+    private long spawnInterval = 1100;
 
     private boolean gameOver = false;
     private int score = 0;
@@ -101,15 +103,17 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         enemies.clear();
         gems.clear();
         visualEffects.clear();
+        bossAttacks.clear();
         weapons.clear();
         passiveItems.clear();
         activeKeys.clear();
 
         levelManager.reset();
 
-        weapons.add(new SwordWeapon(1));
+        boolean startsWithLaser = characterType == Player.CharacterType.IRON_GUARDIAN;
+        weapons.add(new SwordWeapon(startsWithLaser ? 0 : 1));
         weapons.add(new GarlicWeapon(0));
-        weapons.add(new LaserWeapon(0));
+        weapons.add(new LaserWeapon(startsWithLaser ? 1 : 0));
         weapons.add(new GunWeapon(0));
         weapons.add(new FireStaffWeapon(0));
         weapons.add(new SpearWeapon(0));
@@ -122,7 +126,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         gameOver = false;
         score = 0;
-        spawnInterval = 700;
+        spawnInterval = 1100;
 
         gameStartTime = System.currentTimeMillis();
         gameTimeMillis = gameStartTime;
@@ -134,6 +138,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         cameraY = player.y - SCREEN_HEIGHT / 2.0;
         elapsedSeconds = 0;
         lastBossSpawnMinute = 0;
+        nextBossSpawnSeconds = SpawnBalance.FIRST_BOSS_SECONDS;
     }
 
     public synchronized void startGameThread() {
@@ -198,15 +203,17 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             weapon.update(player, enemies, visualEffects, currentTime);
         }
 
-        spawnInterval = Math.max(260L, 700L - (elapsedSeconds * 8L) - (levelManager.getLevel() * 20L));
+        boolean bossAlive = hasLivingBoss();
+        spawnInterval = SpawnBalance.intervalMillis(elapsedSeconds, levelManager.getLevel(), bossAlive);
         if (currentTime - lastSpawnTime >= spawnInterval) {
             spawnEnemyAroundPlayer();
             lastSpawnTime = currentTime;
         }
 
-        if (elapsedSeconds >= lastBossSpawnMinute + getBossSpawnIntervalSeconds()) {
+        if (!hasBossOnField() && elapsedSeconds >= nextBossSpawnSeconds) {
             spawnBossAroundPlayer(elapsedSeconds / 60);
             lastBossSpawnMinute = elapsedSeconds;
+            nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.FIRST_BOSS_SECONDS;
         }
 
         Iterator<VisualEffect> vIt = visualEffects.iterator();
@@ -222,6 +229,9 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             enemy.update(player.x, player.y);
 
             if (enemy.hp <= 0) {
+                if (enemy.type == EnemyType.BOSS) {
+                    nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
+                }
                 int gemXp = (enemy.type == EnemyType.BOSS) ? 50 : 5;
                 gems.add(new Gem(enemy.x, enemy.y, gemXp, enemy.type == EnemyType.BOSS));
                 score += enemy.scoreValue;
@@ -234,20 +244,21 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 continue;
             }
 
+            enemy.updateBossSkill(player, bossAttacks, currentTime);
+
             // แก้ไขการรับดาเมจ ให้เช็ค Invincibility Frames
             if (enemy.getBounds().intersects(player.getBounds())) {
-                long now = gameTimeMillis;
-                if (now - player.lastDamageTime >= player.invincibilityDuration) {
-                    player.hp -= enemy.damage;
-                    player.lastDamageTime = now;
-                    if (player.hp <= 0) {
-                        player.hp = 0;
-                        gameOver = true;
-                        activeKeys.clear();
-                        return;
-                    }
-                }
+                damagePlayer(enemy.getContactDamage());
+                if (gameOver) return;
             }
+        }
+
+        Iterator<BossAttack> attackIterator = bossAttacks.iterator();
+        while (attackIterator.hasNext()) {
+            BossAttack attack = attackIterator.next();
+            damagePlayer(attack.update(player, currentTime));
+            if (attack.isFinished()) attackIterator.remove();
+            if (gameOver) return;
         }
 
         Iterator<Gem> gIt = gems.iterator();
@@ -272,11 +283,15 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void spawnEnemyAroundPlayer() {
-        int spawnCount = 1 + (levelManager.getLevel() / 4);
-        spawnCount = Math.min(spawnCount, 4);
+        int regularCount = 0;
+        for (Enemy enemy : enemies) {
+            if (enemy.type != EnemyType.BOSS && enemy.hp > 0) regularCount++;
+        }
+        int spawnCount = Math.min(SpawnBalance.batchSize(elapsedSeconds, hasLivingBoss()),
+                SpawnBalance.MAX_REGULAR_ENEMIES - regularCount);
 
         for (int i = 0; i < spawnCount; i++) {
-            double spawnDistance = 500 + Math.random() * 120;
+            double spawnDistance = 660 + Math.random() * 120;
             double angle = Math.random() * Math.PI * 2;
 
             double ex = player.x + Math.cos(angle) * spawnDistance;
@@ -287,22 +302,36 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         }
     }
 
-    private EnemyType getRandomEnemyType() {
-        double rand = Math.random();
-        int level = levelManager.getLevel();
-
-        if (rand < 0.30) return EnemyType.NORMAL;
-        if (rand < 0.55) return EnemyType.FAST;
-        if (rand < 0.90) return EnemyType.TANK;
-        return EnemyType.TANK;
+    private void damagePlayer(int damage) {
+        if (damage <= 0 || gameOver || gameTimeMillis - player.lastDamageTime < player.invincibilityDuration) return;
+        player.hp = Math.max(0, player.hp - damage);
+        player.lastDamageTime = gameTimeMillis;
+        if (player.hp == 0) {
+            gameOver = true;
+            activeKeys.clear();
+        }
     }
 
-    private long getBossSpawnIntervalSeconds() {
-        return Math.max(25L, 60L - (levelManager.getLevel() * 2L));
+    private EnemyType getRandomEnemyType() {
+        return SpawnBalance.typeForRoll(Math.random(), elapsedSeconds);
+    }
+
+    private boolean hasLivingBoss() {
+        for (Enemy enemy : enemies) {
+            if (enemy.type == EnemyType.BOSS && enemy.hp > 0) return true;
+        }
+        return false;
+    }
+
+    private boolean hasBossOnField() {
+        for (Enemy enemy : enemies) {
+            if (enemy.type == EnemyType.BOSS) return true;
+        }
+        return false;
     }
 
     private void spawnBossAroundPlayer(long bossWave) {
-        double spawnDistance = 450;
+        double spawnDistance = 660 + Math.random() * 60;
         double angle = Math.random() * Math.PI * 2;
 
         double ex = player.x + Math.cos(angle) * spawnDistance;
@@ -322,6 +351,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         }
 
         drawInfiniteMap(dbg);
+        for (Enemy enemy : enemies) enemy.drawBossWarning(dbg, cameraX, cameraY);
+        for (BossAttack attack : bossAttacks) attack.draw(dbg, cameraX, cameraY);
 
         for (Gem gem : gems) gem.draw(dbg, cameraX, cameraY);
         for (Enemy enemy : enemies) enemy.draw(dbg, cameraX, cameraY);

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 public class Enemy {
     private static final int WALK_FRAME_COUNT = 8;
@@ -32,11 +33,22 @@ public class Enemy {
     public EnemyType type;
     private final SpriteAnimation sprite;
     private boolean facingLeft;
+    private final BossSkill bossSkill;
 
     public Enemy(double x, double y, EnemyType type, int playerLevel) {
+        this(x, y, type, playerLevel, null);
+    }
+
+    Enemy(double x, double y, EnemyType type, int playerLevel, BossSkill.Kind bossKind) {
         this.x = x;
         this.y = y;
         this.type = type;
+        if (type == EnemyType.BOSS) {
+            BossSkill.Kind[] kinds = BossSkill.Kind.values();
+            bossSkill = new BossSkill(bossKind == null ? kinds[(int) (Math.random() * kinds.length)] : bossKind);
+        } else {
+            bossSkill = null;
+        }
         this.sprite = selectSprite(type);
 
         switch (type) {
@@ -75,6 +87,7 @@ public class Enemy {
 
     public void update(double targetX, double targetY) {
         facingLeft = targetX < x;
+        if (bossSkill != null && (bossSkill.isCharging() || bossSkill.isWindingUp())) return;
         double angle = Math.atan2(targetY - y, targetX - x);
         x += Math.cos(angle) * speed;
         y += Math.sin(angle) * speed;
@@ -82,6 +95,18 @@ public class Enemy {
 
     public Rectangle getBounds() {
         return new Rectangle((int) x - size / 2, (int) y - size / 2, size, size);
+    }
+
+    void updateBossSkill(Player player, List<BossAttack> attacks, long time) {
+        if (bossSkill != null) bossSkill.update(this, player, attacks, time);
+    }
+
+    int getContactDamage() {
+        return bossSkill != null && bossSkill.isCharging() ? 14 : damage;
+    }
+
+    void drawBossWarning(Graphics2D g, double camX, double camY) {
+        if (bossSkill != null && hp > 0) bossSkill.drawWarning(g, camX, camY);
     }
 
     public void draw(Graphics2D g, double camX, double camY) {
@@ -98,6 +123,8 @@ public class Enemy {
         }
 
         if (type == EnemyType.BOSS) {
+            g.setColor(Color.WHITE);
+            g.drawString(bossSkill.kind.name, screenX - 30, screenY - size / 2 - 18);
             g.setColor(Color.RED);
             g.fillRect(screenX - 30, screenY - size / 2 - 12, 60, 6);
             g.setColor(Color.GREEN);
@@ -117,7 +144,7 @@ public class Enemy {
             case SHADOW:
                 return FAST_SPRITES[(int) (Math.random() * FAST_SPRITES.length)];
             case BOSS:
-                return BOSS_SPRITES[(int) (Math.random() * BOSS_SPRITES.length)];
+                return BOSS_SPRITES[bossSkill.kind.ordinal()];
             case NORMAL:
             default:
                 return NORMAL_SPRITES[(int) (Math.random() * NORMAL_SPRITES.length)];

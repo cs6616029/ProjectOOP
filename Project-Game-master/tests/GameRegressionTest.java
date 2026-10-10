@@ -124,8 +124,26 @@ public final class GameRegressionTest {
         var auraGraphics = auraImage.createGraphics();
         garlic.draw(auraGraphics, player, -110, -110);
         auraGraphics.dispose();
-        check(auraImage.getRGB(165, 110) != 0 && auraImage.getRGB(185, 110) == 0,
-                "Garlic draws the same 56-pixel radius used for damage");
+        check(garlic.getName().equals("Aurafarming"), "Aura skill uses its new name");
+        BufferedImage auraSheet = javax.imageio.ImageIO.read(GameRegressionTest.class.getResource(
+                "/project/game/weapons/Aurafarming/Effect-Aurafarming.png"));
+        for (int frameIndex = 0; frameIndex < 5; frameIndex++) {
+            garlic.update(player, Collections.emptyList(), effects, 10000 + frameIndex * 100);
+            auraImage = new BufferedImage(220, 220, BufferedImage.TYPE_INT_ARGB);
+            auraGraphics = auraImage.createGraphics();
+            garlic.draw(auraGraphics, player, -110, -110);
+            auraGraphics.dispose();
+            BufferedImage expectedAura = new BufferedImage(220, 220, BufferedImage.TYPE_INT_ARGB);
+            var expectedGraphics = expectedAura.createGraphics();
+            int frameWidth = auraSheet.getWidth() / 4;
+            int drawHeight = 112 * auraSheet.getHeight() / frameWidth;
+            expectedGraphics.drawImage(auraSheet.getSubimage(frameIndex % 4 * frameWidth, 0,
+                    frameWidth, auraSheet.getHeight()), 54, 110 + player.size / 2 - drawHeight, 112, drawHeight, null);
+            expectedGraphics.dispose();
+            check(Arrays.equals(auraImage.getRGB(0, 0, 220, 220, null, 0, 220),
+                    expectedAura.getRGB(0, 0, 220, 220, null, 0, 220)),
+                    "Aura uses supplied frame, correct scale and looping at frame " + frameIndex);
+        }
 
         VampireSurvivorsGame game = new VampireSurvivorsGame();
         player = (Player) get(game, "player");

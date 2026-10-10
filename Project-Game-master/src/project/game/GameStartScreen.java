@@ -152,7 +152,11 @@ public final class GameStartScreen extends JPanel {
                     card.y + 62, previewWidth, previewHeight, null);
             g.setColor(new Color(218, 226, 239));
             g.setFont(new Font("SansSerif", Font.PLAIN, 14));
-            String details = index == 0 ? "A fearless adventurer" : "A mighty armored guardian";
+            String details = switch (CHARACTERS[index]) {
+                case SURVIVOR -> "Starts with Sword";
+                case IRON_GUARDIAN -> "Starts with Laser";
+                case STRONG_BOY -> "Starts with Aurafarming";
+            };
             drawCentered(g, details, card.x + card.width / 2, card.y + 220);
             if (selected) {
                 drawBadge(g, card.x + card.width / 2 - 42, card.y + 226, "SELECTED");
@@ -239,7 +243,10 @@ public final class GameStartScreen extends JPanel {
     }
 
     private Rectangle playerCard(int index) {
-        return new Rectangle(165 + index * 270, 185, 220, 280);
+        int cardWidth = 220;
+        int gap = 24;
+        int startX = (DESIGN_WIDTH - (cardWidth * CHARACTERS.length + gap * (CHARACTERS.length - 1))) / 2;
+        return new Rectangle(startX + index * (cardWidth + gap), 185, cardWidth, 280);
     }
 
     private void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {

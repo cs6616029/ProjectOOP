@@ -110,16 +110,17 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         levelManager.reset();
 
-        boolean startsWithLaser = characterType == Player.CharacterType.IRON_GUARDIAN;
-        weapons.add(new SwordWeapon(startsWithLaser ? 0 : 1));
-        weapons.add(new GarlicWeapon(0));
-        weapons.add(new LaserWeapon(startsWithLaser ? 1 : 0));
+        int primaryWeaponIndex = characterType.getPrimaryWeaponIndex();
+        weapons.add(new SwordWeapon(primaryWeaponIndex == 0 ? 1 : 0));
+        weapons.add(new GarlicWeapon(primaryWeaponIndex == 1 ? 1 : 0,
+                player.getRenderSize() / (double) player.size));
+        weapons.add(new LaserWeapon(primaryWeaponIndex == 2 ? 1 : 0));
         weapons.add(new GunWeapon(0));
         weapons.add(new FireStaffWeapon(0));
         weapons.add(new SpearWeapon(0));
         weapons.add(new HolyWaterWeapon(0));
         weapons.add(new ShieldWeapon(0));
-        levelManager.setPrimaryWeapon(weapons.get(startsWithLaser ? 2 : 0));
+        levelManager.setPrimaryWeapon(weapons.get(primaryWeaponIndex));
 
         passiveItems.add(new PassiveItem(PassiveItem.ItemType.ARMOR));
         passiveItems.add(new PassiveItem(PassiveItem.ItemType.BOOTS));

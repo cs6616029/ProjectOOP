@@ -29,7 +29,11 @@ public class LevelUpOptionsTest {
             VampireSurvivorsGame game = new VampireSurvivorsGame(character, "/project/game/Map/forest.jpg");
             LevelManager manager = (LevelManager) get(game, "levelManager");
             List<Weapon> weapons = (List<Weapon>) get(game, "weapons");
-            Weapon primary = weapons.get(character == Player.CharacterType.SURVIVOR ? 0 : 2);
+            Weapon primary = weapons.get(switch (character) {
+                case SURVIVOR -> 0;
+                case IRON_GUARDIAN -> 2;
+                case STRONG_BOY -> 1;
+            });
             manager.gainXP(50, null, weapons, new ArrayList<>());
             for (int choice = 0; choice < 3; choice++) {
                 List<?> offers = (List<?>) get(manager, "offeredUpgrades");

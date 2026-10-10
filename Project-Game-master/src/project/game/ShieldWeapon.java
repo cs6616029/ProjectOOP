@@ -2,7 +2,9 @@ package project.game;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ShieldWeapon extends Weapon {
     private static final GifAnimation RING_ANIMATION = GifAnimation.load(
@@ -12,7 +14,9 @@ public class ShieldWeapon extends Weapon {
     private double currentAngle = 0;
     private final long baseDmgInterval = 250;
     private final long[] lastDmgTimes = new long[5];
-    private final boolean[] touchingEnemy = new boolean[5];
+    private final boolean[] touchingRegularEnemy = new boolean[5];
+    private static final long BOSS_EXPLOSION_INTERVAL = 750;
+    private final Map<Enemy, Long> lastBossExplosions = new IdentityHashMap<>();
 
     public ShieldWeapon(int level) {
         super("Ten Ring", "Summons fiery rings orbiting around you. Higher levels add more rings.", level, 18, 6);
@@ -44,6 +48,7 @@ public class ShieldWeapon extends Weapon {
         // Snapshot living targets so simultaneous ring contacts all get effects,
         // even if an earlier ring kills the target during this update.
         List<Enemy> livingEnemies = enemies.stream().filter(enemy -> enemy.hp > 0).toList();
+        lastBossExplosions.keySet().removeIf(enemy -> !livingEnemies.contains(enemy));
 
         // คำนวณคูลดาวน์ทำดาเมจร่วมกับ Speed Buff ของ Player
         long effectiveInterval = (long) (baseDmgInterval * player.attackCooldownMultiplier);
@@ -53,6 +58,8 @@ public class ShieldWeapon extends Weapon {
             double shieldX = player.x + Math.cos(angle) * orbitRadius;
             double shieldY = player.y + Math.sin(angle) * orbitRadius;
             boolean hitEnemy = false;
+            boolean hitRegularEnemy = false;
+            boolean bossExplosionReady = false;
             boolean damageReady = currentTime - lastDmgTimes[i] >= effectiveInterval;
 
             for (Enemy enemy : livingEnemies) {
@@ -61,13 +68,23 @@ public class ShieldWeapon extends Weapon {
                 if (contactX * contactX + contactY * contactY <= 1) {
                     if (damageReady && enemy.hp > 0) enemy.hp -= damage;
                     hitEnemy = true;
+                    if (enemy.type == EnemyType.BOSS) {
+                        Long lastExplosion = lastBossExplosions.get(enemy);
+                        if (lastExplosion == null || currentTime - lastExplosion >= BOSS_EXPLOSION_INTERVAL) {
+                            // All rings share the visual cooldown for this boss; damage stays independent.
+                            lastBossExplosions.put(enemy, currentTime);
+                            bossExplosionReady = true;
+                        }
+                    } else {
+                        hitRegularEnemy = true;
+                    }
                 }
             }
-            if (hitEnemy && (!touchingEnemy[i] || damageReady)) {
+            if (bossExplosionReady || (hitRegularEnemy && (!touchingRegularEnemy[i] || damageReady))) {
                 visualEffects.add(VisualEffect.explosion(shieldX, shieldY, scaleStat(51, 7)));
             }
             if (hitEnemy && damageReady) lastDmgTimes[i] = currentTime;
-            touchingEnemy[i] = hitEnemy;
+            touchingRegularEnemy[i] = hitRegularEnemy;
         }
     }
 

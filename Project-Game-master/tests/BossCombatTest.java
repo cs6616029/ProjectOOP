@@ -35,6 +35,33 @@ public final class BossCombatTest {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
+        BufferedImage blueSheet = javax.imageio.ImageIO.read(BossCombatTest.class.getResource(
+                "/project/game/Monster/Boss/effects/BlueFlame.png"));
+        Enemy previewDragon = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.DRAGON);
+        Player distantPlayer = new Player(5000, 5000);
+        for (int direction = 0; direction < 8; direction++) {
+            double angle = direction * Math.PI / 4;
+            BossAttack flame = BossAttack.dragonFire(previewDragon, angle, 1000);
+            for (int frameIndex = 0; frameIndex < 5; frameIndex++) {
+                flame.update(distantPlayer, 1000 + frameIndex * 90);
+                BufferedImage actual = new BufferedImage(160, 160, BufferedImage.TYPE_INT_ARGB);
+                var graphics = actual.createGraphics();
+                flame.draw(graphics, (double) get(flame, "x") - 80, (double) get(flame, "y") - 80);
+                graphics.dispose();
+                BufferedImage expected = new BufferedImage(160, 160, BufferedImage.TYPE_INT_ARGB);
+                graphics = expected.createGraphics();
+                graphics.translate(80, 80);
+                graphics.rotate(Math.atan2(Math.sin(angle), Math.cos(angle)) + Math.PI);
+                int frameWidth = blueSheet.getWidth() / 4;
+                int height = 64 * blueSheet.getHeight() / frameWidth;
+                graphics.drawImage(blueSheet.getSubimage(frameIndex % 4 * frameWidth, 0,
+                        frameWidth, blueSheet.getHeight()), -32, -height / 2, 64, height, null);
+                graphics.dispose();
+                check(java.util.Arrays.equals(actual.getRGB(0, 0, 160, 160, null, 0, 160),
+                        expected.getRGB(0, 0, 160, 160, null, 0, 160)),
+                        "Blue flame frame and loop for direction " + direction + ", frame " + frameIndex);
+            }
+        }
         for (BossSkill.Kind kind : BossSkill.Kind.values()) {
             Enemy boss = new Enemy(0, 0, EnemyType.BOSS, 1, kind);
             Player target = new Player(300, 0);

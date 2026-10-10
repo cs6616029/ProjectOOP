@@ -121,7 +121,41 @@ public class ExplosionEffectTest {
         check(effects.size() == 2 && first.hp == 974, "Laser does not repeat impact during cooldown");
         verifyAnimation(effects.get(0));
         System.out.println("PASS: explosion sprite frames, fireball impact, dragon impact, one-shot playback and dodging");
+        effects.clear();
+        ring = new ShieldWeapon(5);
+        Enemy boss = new Enemy(0, 0, EnemyType.BOSS, 1);
+        boss.hp = 10000;
+        ring.update(player, List.of(boss), effects, 60000);
+        check(effects.size() == 1 && boss.hp == 9790,
+                "Five rings create one boss explosion while all five deal damage");
+        ring.update(player, List.of(boss), effects, 60250);
+        check(effects.size() == 1 && boss.hp == 9580,
+                "Boss explosion cooldown does not slow ring damage");
+        ring.update(player, List.of(boss), effects, 60749);
+        check(effects.size() == 1 && boss.hp == 9370,
+                "Boss impact effects remain limited before 750 milliseconds");
+        ring.update(player, List.of(boss), effects, 60750);
+        check(effects.size() == 2 && boss.hp == 9370,
+                "Boss gets only one new explosion after visual cooldown");
+        verifyAnimation(effects.get(1));
+        effects.clear();
+        GarlicWeapon aura = new GarlicWeapon(1);
+        first = new Enemy(40, 0, EnemyType.NORMAL, 1);
+        second = new Enemy(0, 40, EnemyType.NORMAL, 1);
+        missed = new Enemy(400, 0, EnemyType.NORMAL, 1);
+        first.hp = second.hp = missed.hp = 1000;
+        aura.update(player, List.of(first, second, dead, missed), effects, 70000);
+        check(effects.size() == 2 && first.hp == 990 && second.hp == 990 && missed.hp == 1000 && dead.hp == 0,
+                "Aura explodes for every live enemy hit, excluding dead and distant enemies");
+        check(effects.get(0).x == first.x && effects.get(0).y == first.y
+                && effects.get(1).x == second.x && effects.get(1).y == second.y,
+                "Aura explosions occur at hit enemy positions");
+        aura.update(player, List.of(first, second), effects, 70010);
+        check(effects.size() == 2 && first.hp == 990, "Aura cooldown prevents repeated explosion every frame");
+        verifyAnimation(effects.get(0));
         System.out.println("PASS: Ten Ring impacts, crowd hits, cooldown, dead enemies and shared Fire Staff animation");
         System.out.println("PASS: independent rings, visual contact edge, simultaneous killing hits and laser impact explosions");
+        System.out.println("PASS: shared boss explosion cooldown preserves all ring damage");
+        System.out.println("PASS: Aurafarming impact positions, cooldown and shared Fire Staff explosion frames");
     }
 }

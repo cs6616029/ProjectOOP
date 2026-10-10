@@ -23,3 +23,5 @@ if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Boss death effect checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.ContactDamageTest
 if ($LASTEXITCODE -ne 0) { throw 'Contact damage checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.StrongBoyCharacterTest
+if ($LASTEXITCODE -ne 0) { throw 'Strong Boy character checks failed' }

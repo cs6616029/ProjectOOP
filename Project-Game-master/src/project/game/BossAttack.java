@@ -4,9 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.List;
-import javax.imageio.ImageIO;
 
 /** Boss projectiles and slam effects use the game's paused clock. */
 final class BossAttack {
@@ -62,21 +60,9 @@ final class BossAttack {
                 "/project/game/Monster/Boss/effects/Effect_spear.png", 3);
     }
 
-    private static final class DragonFireImage {
-        static final BufferedImage IMAGE = load();
-
-        private static BufferedImage load() {
-            String path = "/project/game/Monster/Boss/effects/dragon-fire.png";
-            var resource = BossAttack.class.getResource(path);
-            if (resource == null) throw new IllegalStateException("Missing dragon fire image: " + path);
-            try {
-                BufferedImage image = ImageIO.read(resource);
-                if (image == null) throw new IllegalStateException("Invalid dragon fire image: " + path);
-                return image;
-            } catch (IOException exception) {
-                throw new IllegalStateException("Unable to load dragon fire image: " + path, exception);
-            }
-        }
+    private static final class DragonFireAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load(
+                "/project/game/Monster/Boss/effects/BlueFlame.png", 4);
     }
 
     static BossAttack slam(Enemy owner, double x, double y, long time) {
@@ -124,7 +110,7 @@ final class BossAttack {
         Graphics2D g = (Graphics2D) graphics.create();
         int sx = (int) (x - camX), sy = (int) (y - camY);
         if (dragonFire) {
-            BufferedImage image = DragonFireImage.IMAGE;
+            BufferedImage image = DragonFireAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, 90);
             int width = 64;
             int height = width * image.getHeight() / image.getWidth();
             g.translate(sx, sy);

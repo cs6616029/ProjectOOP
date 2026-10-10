@@ -58,6 +58,7 @@ public class LaserWeapon extends Weapon {
 
                     isShooting = true;
                     shootStartTime = currentTime;
+                    SoundEffects.play(SoundEffects.Effect.LASER);
                 }
             }
             lastAttackTime = currentTime;

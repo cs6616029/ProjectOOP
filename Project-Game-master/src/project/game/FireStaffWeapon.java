@@ -77,6 +77,7 @@ public class FireStaffWeapon extends Weapon {
                     int dmg = getDamage();
                     int radius = scaleStat(51, 7);
                     fireballs.add(new Fireball(player.x, player.y, dx / len, dy / len, dmg, radius, scaleStat(56, 6)));
+                    SoundEffects.play(SoundEffects.Effect.FLAME);
                 }
             }
             lastAttackTime = currentTime;
@@ -106,6 +107,7 @@ public class FireStaffWeapon extends Weapon {
                 }
                 // เอฟเฟกต์วงกลมระเบิด
                 visualEffects.add(VisualEffect.explosion(f.x, f.y, f.explosionRadius));
+                SoundEffects.play(SoundEffects.Effect.EXPLOSION);
                 fIt.remove();
             } else if (Math.hypot(f.x - player.x, f.y - player.y) > 900) {
                 fIt.remove();

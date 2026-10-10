@@ -265,31 +265,38 @@ public final class GameStartScreen extends JPanel {
         if (page == Page.START) {
             if (new Rectangle(295, 390, 210, 62).contains(x, y)) {
                 page = Page.PLAYER;
+                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
             }
         } else if (page == Page.PLAYER) {
             for (int index = 0; index < CHARACTERS.length; index++) {
                 if (playerCard(index).contains(x, y)) {
                     selectedCharacter = index;
+                    SoundEffects.play(SoundEffects.Effect.SELECT);
                     break;
                 }
             }
             if (new Rectangle(48, 520, 130, 48).contains(x, y)) {
                 page = Page.START;
+                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
             } else if (new Rectangle(622, 520, 130, 48).contains(x, y)) {
                 page = Page.MAP;
+                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
             }
         } else {
             for (int index = 0; index < MAPS.length; index++) {
                 Rectangle card = mapCard(index);
                 if (card.contains(x, y)) {
                     selectedMap = index;
+                    SoundEffects.play(SoundEffects.Effect.SELECT);
                     break;
                 }
             }
             if (new Rectangle(48, 520, 130, 48).contains(x, y)) {
                 page = Page.PLAYER;
+                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
             } else if (new Rectangle(570, 520, 182, 48).contains(x, y)) {
                 MapOption map = MAPS[selectedMap];
+                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
                 animationTimer.stop();
                 onGameStart.accept(CHARACTERS[selectedCharacter], map.resource);
             }

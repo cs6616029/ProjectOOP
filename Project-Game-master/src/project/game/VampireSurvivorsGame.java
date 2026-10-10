@@ -94,6 +94,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             public void focusLost(FocusEvent e) {
                 synchronized (VampireSurvivorsGame.this) {
                     activeKeys.clear();
+                    SoundEffects.stop(SoundEffects.Effect.WALKING);
                 }
             }
         });
@@ -101,6 +102,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private synchronized void initGame() {
+        SoundEffects.stop(SoundEffects.Effect.WALKING);
         player = new Player(0, 0, characterType);
         enemies.clear();
         gems.clear();
@@ -186,7 +188,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         long nowNanos = System.nanoTime();
         long deltaNanos = Math.max(0L, nowNanos - lastUpdateNanos);
         lastUpdateNanos = nowNanos;
-        if (gameOver || levelManager.isLevelUping()) return;
+        if (gameOver || levelManager.isLevelUping()) {
+            SoundEffects.stop(SoundEffects.Effect.WALKING);
+            return;
+        }
 
         activeTimeNanos += deltaNanos;
         gameTimeMillis = gameStartTime + activeTimeNanos / 1_000_000L;
@@ -199,6 +204,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         if (activeKeys.contains(KeyEvent.VK_A) || activeKeys.contains(KeyEvent.VK_LEFT)) dx -= 1;
         if (activeKeys.contains(KeyEvent.VK_D) || activeKeys.contains(KeyEvent.VK_RIGHT)) dx += 1;
 
+        if (dx == 0 && dy == 0) SoundEffects.stop(SoundEffects.Effect.WALKING);
+        else SoundEffects.loop(SoundEffects.Effect.WALKING);
         player.move(dx, dy);
 
         cameraX = player.x - (SCREEN_WIDTH / 2.0);
@@ -235,8 +242,11 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
             if (enemy.hp <= 0) {
                 if (enemy.type == EnemyType.BOSS) {
+                    SoundEffects.play(SoundEffects.Effect.BOSS_DEATH);
                     visualEffects.add(VisualEffect.bossDeath(enemy.x, enemy.y, enemy.size));
                     nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
+                } else {
+                    SoundEffects.play(SoundEffects.Effect.ENEMY_DEATH);
                 }
                 int gemXp = (enemy.type == EnemyType.BOSS) ? 50 : 5;
                 gems.add(new Gem(enemy.x, enemy.y, gemXp, enemy.type == EnemyType.BOSS));
@@ -281,9 +291,11 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
             if (gem.getBounds().intersects(player.getBounds())) {
                 levelManager.gainXP(gem.xpValue, player, weapons, passiveItems);
+                SoundEffects.play(SoundEffects.Effect.PICKUP);
                 gIt.remove();
                 if (levelManager.isLevelUping()) {
                     activeKeys.clear();
+                    SoundEffects.stop(SoundEffects.Effect.WALKING);
                     return;
                 }
             }
@@ -317,6 +329,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         if (player.hp == 0) {
             gameOver = true;
             activeKeys.clear();
+            SoundEffects.stop(SoundEffects.Effect.WALKING);
         }
     }
 
@@ -371,7 +384,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         drawUI(dbg);
         long presentationTime = System.nanoTime();
         int level = levelManager.getLevel();
-        if (level > displayedLevel) levelUpEffect = new LevelUpEffect(presentationTime);
+        if (level > displayedLevel) {
+            levelUpEffect = new LevelUpEffect(presentationTime);
+            SoundEffects.play(SoundEffects.Effect.LEVEL_UP);
+        }
         displayedLevel = level;
         if (levelUpEffect != null) {
             if (gameOver || levelUpEffect.isFinished(presentationTime)) levelUpEffect = null;

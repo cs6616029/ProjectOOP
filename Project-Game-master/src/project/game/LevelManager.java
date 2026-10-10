@@ -146,6 +146,7 @@ public class LevelManager {
             Object selected = offeredUpgrades.get(index);
             if (!canUpgrade(selected)) return;
 
+            SoundEffects.play(SoundEffects.Effect.UPGRADE);
             if (selected instanceof Weapon) {
                 ((Weapon) selected).levelUp();
             } else if (selected instanceof PassiveItem) {

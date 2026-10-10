@@ -256,7 +256,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         Iterator<BossAttack> attackIterator = bossAttacks.iterator();
         while (attackIterator.hasNext()) {
             BossAttack attack = attackIterator.next();
-            damagePlayer(attack.update(player, currentTime));
+            damagePlayer(attack.update(player, currentTime, visualEffects));
             if (attack.isFinished()) attackIterator.remove();
             if (gameOver) return;
         }
@@ -338,7 +338,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         double ey = player.y + Math.sin(angle) * spawnDistance;
 
         Enemy boss = new Enemy(ex, ey, EnemyType.BOSS, levelManager.getLevel());
-        boss.hp += (int) (bossWave * 35);
+        boss.hp += (int) (bossWave * 35 * Enemy.BOSS_HEALTH_MULTIPLIER);
         boss.maxHp = boss.hp;
         enemies.add(boss);
     }

@@ -12,16 +12,23 @@ final class SpriteAnimation {
     }
 
     static SpriteAnimation load(String resourcePath, int frameCount) {
+        return loadGrid(resourcePath, frameCount, 1);
+    }
+
+    static SpriteAnimation loadGrid(String resourcePath, int columns, int rows) {
         try {
             BufferedImage sheet = ImageIO.read(SpriteAnimation.class.getResource(resourcePath));
-            if (sheet == null || frameCount < 1 || sheet.getWidth() % frameCount != 0) {
+            if (sheet == null || columns < 1 || rows < 1 || sheet.getWidth() % columns != 0
+                    || sheet.getHeight() % rows != 0) {
                 throw new IllegalArgumentException("Invalid sprite sheet: " + resourcePath);
             }
 
-            int frameWidth = sheet.getWidth() / frameCount;
-            BufferedImage[] frames = new BufferedImage[frameCount];
-            for (int index = 0; index < frameCount; index++) {
-                frames[index] = sheet.getSubimage(index * frameWidth, 0, frameWidth, sheet.getHeight());
+            int frameWidth = sheet.getWidth() / columns;
+            int frameHeight = sheet.getHeight() / rows;
+            BufferedImage[] frames = new BufferedImage[columns * rows];
+            for (int index = 0; index < frames.length; index++) {
+                frames[index] = sheet.getSubimage((index % columns) * frameWidth,
+                        (index / columns) * frameHeight, frameWidth, frameHeight);
             }
             return new SpriteAnimation(frames);
         } catch (IOException exception) {

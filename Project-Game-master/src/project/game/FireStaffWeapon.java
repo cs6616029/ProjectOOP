@@ -97,7 +97,7 @@ public class FireStaffWeapon extends Weapon {
                     }
                 }
                 // เอฟเฟกต์วงกลมระเบิด
-                visualEffects.add(new VisualEffect(f.x, f.y, f.explosionRadius, Color.ORANGE, 15));
+                visualEffects.add(VisualEffect.explosion(f.x, f.y, f.explosionRadius));
                 fIt.remove();
             } else if (Math.hypot(f.x - player.x, f.y - player.y) > 900) {
                 fIt.remove();
@@ -110,7 +110,13 @@ public class FireStaffWeapon extends Weapon {
         for (Fireball f : fireballs) {
             int sx = (int) (f.x - camX);
             int sy = (int) (f.y - camY);
-            g.drawImage(FIRE_IMAGE, sx - 16, sy - 16, 32, 32, null);
+            int width = 56;
+            int height = width * FIRE_IMAGE.getHeight() / FIRE_IMAGE.getWidth();
+            Graphics2D fireGraphics = (Graphics2D) g.create();
+            fireGraphics.translate(sx, sy);
+            fireGraphics.rotate(Math.atan2(f.dirY, f.dirX));
+            fireGraphics.drawImage(FIRE_IMAGE, -width / 2, -height / 2, width, height, null);
+            fireGraphics.dispose();
         }
     }
 }

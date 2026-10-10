@@ -81,11 +81,17 @@ public final class BossCombatTest {
                             "Slam hits once inside its radius");
                     break;
                 case SKELETON:
-                    check(attacks.size() == 8, "Skeleton fires eight radial bolts");
+                    check(attacks.size() == 8, "Skeleton fires eight radial sword waves");
+                    BufferedImage waves = new BufferedImage(200, 200, BufferedImage.TYPE_INT_ARGB);
+                    var waveGraphics = waves.createGraphics();
+                    for (BossAttack wave : attacks) wave.draw(waveGraphics, -100, -100);
+                    waveGraphics.dispose();
+                    check(java.util.Arrays.stream(waves.getRGB(0, 0, 200, 200, null, 0, 200))
+                            .anyMatch(pixel -> (pixel >>> 24) != 0), "Attached sword-wave sprite renders in all directions");
                     target.x = 0;
                     target.y = 300;
                     check(attacks.get(2).update(target, release + 1400) == 10,
-                            "Skeleton has a damaging vertical ray");
+                            "Skeleton has a damaging vertical sword wave");
                     break;
             }
             int count = attacks.size();
@@ -102,6 +108,13 @@ public final class BossCombatTest {
         owner.hp = 0;
         check(bolt.update(target, 1200) == 0 && bolt.isFinished(), "Dead boss attacks disappear");
         owner.hp = 100;
+        BossAttack wave = BossAttack.swordWave(owner, 0, 1000);
+        target.x = 200;
+        target.y = 130;
+        check(wave.update(target, 1900) == 0, "Player can dodge outside sword-wave width");
+        wave = BossAttack.swordWave(owner, 0, 1000);
+        target.y = 80;
+        check(wave.update(target, 1900) == 10, "Sword-wave collision matches its larger width");
         bolt = BossAttack.projectile(owner, 0, 500, 10, 12, java.awt.Color.ORANGE, 1000);
         check(bolt.update(target, 4500) == 0 && bolt.isFinished(), "Missed projectiles expire");
 

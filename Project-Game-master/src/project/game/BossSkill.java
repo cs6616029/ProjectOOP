@@ -11,7 +11,7 @@ final class BossSkill {
         CHARGER("Warlord", "CHARGE", 4500, 1000),
         DRAGON("Dragon", "FIRE SPREAD", 4000, 900),
         OGRE("Ogre", "GROUND SLAM", 5000, 1100),
-        SKELETON("Skeleton", "BONE BURST", 4200, 1000);
+        SKELETON("Skeleton", "SWORD WAVE", 4200, 1000);
 
         final String name, attackName;
         final long cooldown, windup;
@@ -61,8 +61,7 @@ final class BossSkill {
                     break;
                 case DRAGON:
                     for (int i = -1; i <= 1; i++) {
-                        attacks.add(BossAttack.projectile(boss, angle + i * 0.24,
-                                260, 14, 12, Color.ORANGE, time));
+                        attacks.add(BossAttack.dragonFire(boss, angle + i * 0.24, time));
                     }
                     break;
                 case OGRE:
@@ -70,8 +69,7 @@ final class BossSkill {
                     break;
                 case SKELETON:
                     for (int i = 0; i < 8; i++) {
-                        attacks.add(BossAttack.projectile(boss, angle + i * Math.PI / 4,
-                                220, 10, 10, Color.CYAN, time));
+                        attacks.add(BossAttack.swordWave(boss, angle + i * Math.PI / 4, time));
                     }
                     break;
             }
@@ -96,7 +94,8 @@ final class BossSkill {
             g.drawOval(sx - 200, sy - 200, 400, 400);
         } else {
             int rays = kind == Kind.SKELETON ? 8 : (kind == Kind.DRAGON ? 3 : 1);
-            g.setStroke(new BasicStroke(kind == Kind.CHARGER ? 250 : 6));
+            g.setStroke(new BasicStroke(kind == Kind.CHARGER ? 250
+                    : (kind == Kind.SKELETON ? BossAttack.SWORD_WAVE_RADIUS * 2 : 6)));
             for (int i = 0; i < rays; i++) {
                 double rayAngle = angle + (kind == Kind.SKELETON ? i * Math.PI / 4
                         : (kind == Kind.DRAGON ? (i - 1) * 0.24 : 0));

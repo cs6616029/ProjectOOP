@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 public class Enemy {
+    static final int BOSS_HEALTH_MULTIPLIER = 3;
     private static final int WALK_FRAME_COUNT = 8;
     private static final SpriteAnimation[] NORMAL_SPRITES = new SpriteAnimation[] {
         SpriteAnimation.load("/project/game/Monster/Normal/Slime_1.png", WALK_FRAME_COUNT),
@@ -68,7 +69,7 @@ public class Enemy {
                 break;
             case BOSS:
                 this.size = 250;
-                this.hp = 60 + (playerLevel * 10);
+                this.hp = (60 + playerLevel * 10) * BOSS_HEALTH_MULTIPLIER;
                 this.speed = 1.3;
                 this.damage = 7;
                 this.scoreValue = 240;

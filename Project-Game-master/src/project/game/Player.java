@@ -12,20 +12,25 @@ public class Player {
         SURVIVOR(
                 "Adventurer",
                 "/project/game/Monster/Player/ass center.png",
-                "/project/game/Monster/Player/ass walk.png"),
+                "/project/game/Monster/Player/ass walk.png",
+                "/project/game/Monster/Player/ass south walk.png"),
         IRON_GUARDIAN(
                 "Iron Guardian",
                 "/project/game/Monster/Player/ironmancenter.png",
-                "/project/game/Monster/Player/ironmanwalk.png");
+                "/project/game/Monster/Player/ironmanwalk.png",
+                null);
 
         private final String displayName;
         private final String idleSpriteResource;
         private final String walkSpriteResource;
+        private final String southWalkSpriteResource;
 
-        CharacterType(String displayName, String idleSpriteResource, String walkSpriteResource) {
+        CharacterType(String displayName, String idleSpriteResource, String walkSpriteResource,
+                String southWalkSpriteResource) {
             this.displayName = displayName;
             this.idleSpriteResource = idleSpriteResource;
             this.walkSpriteResource = walkSpriteResource;
+            this.southWalkSpriteResource = southWalkSpriteResource;
         }
 
         public String getDisplayName() {
@@ -43,6 +48,7 @@ public class Player {
 
     private final SpriteAnimation idleSprite;
     private final SpriteAnimation walkSprite;
+    private final SpriteAnimation southWalkSprite;
 
     public double x, y;
     public int size = 80;
@@ -70,6 +76,8 @@ public class Player {
         this.y = y;
         idleSprite = SpriteAnimation.load(characterType.getIdleSpriteResource(), WALK_FRAME_COUNT);
         walkSprite = SpriteAnimation.load(characterType.getWalkSpriteResource(), WALK_FRAME_COUNT);
+        southWalkSprite = characterType.southWalkSpriteResource == null ? walkSprite
+                : SpriteAnimation.load(characterType.southWalkSpriteResource, WALK_FRAME_COUNT);
     }
 
     public void move(int dx, int dy) {
@@ -99,10 +107,11 @@ public class Player {
         int screenY = (int) (y - camY);
         boolean isInvincible = (gameTimeMillis - lastDamageTime) < invincibilityDuration;
         long currentTime = System.currentTimeMillis();
-        SpriteAnimation sprite = moving ? walkSprite : idleSprite;
+        boolean walkingSouth = moving && lastDirY > 0 && southWalkSprite != walkSprite;
+        SpriteAnimation sprite = !moving ? idleSprite : (walkingSouth ? southWalkSprite : walkSprite);
         BufferedImage frame = sprite.frameAt(currentTime, moving ? 100 : 180);
         boolean flash = isInvincible && (gameTimeMillis / 100) % 2 == 0;
-        if (lastDirX < 0) {
+        if (lastDirX < 0 && !walkingSouth) {
             g.drawImage(frame, screenX + size / 2, screenY - size / 2,
                     screenX - size / 2, screenY + size / 2,
                     0, 0, frame.getWidth(), frame.getHeight(), null);

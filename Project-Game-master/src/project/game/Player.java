@@ -19,8 +19,8 @@ public class Player {
                 "Iron Guardian",
                 "/project/game/Monster/Player/ironmancenter.png",
                 "/project/game/Monster/Player/ironmanwalk.png",
-                null,
-                0);
+                "/project/game/Monster/Player/ironmancenter.png",
+                2);
 
         private final String displayName;
         private final String idleSpriteResource;

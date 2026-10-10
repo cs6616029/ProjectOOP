@@ -11,6 +11,17 @@ public class VisualEffect {
     private int currentFrame = 0;
     private boolean explosion;
     private boolean bossDeath;
+    private boolean bulletHit;
+
+    private static final class BulletHitAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/bullet-hit.png", 10);
+    }
+
+    public static VisualEffect bulletHit(double x, double y) {
+        VisualEffect effect = new VisualEffect(x, y, 40, Color.RED, 30);
+        effect.bulletHit = true;
+        return effect;
+    }
 
     private static final class BossDeathAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.loadFrames(
@@ -59,6 +70,11 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (bulletHit) {
+            g.drawImage(BulletHitAnimation.SPRITE.frameAt(currentFrame, 3),
+                    sx - radius, sy - radius, radius * 2, radius * 2, null);
+            return;
+        }
         if (bossDeath) {
             g.drawImage(BossDeathAnimation.SPRITE.frameAt(currentFrame, 6),
                     sx - radius, sy - radius, radius * 2, radius * 2, null);

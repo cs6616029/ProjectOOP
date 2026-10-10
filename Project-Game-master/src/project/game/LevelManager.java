@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class LevelManager {
+    private static final int MAX_OPTIONS = 5;
+    private Weapon primaryWeapon;
     private int level = 1;
     private int xp = 0;
     private int xpToNextLevel = 10;
@@ -35,6 +37,16 @@ public class LevelManager {
         pendingUpgrades = 0;
         availableWeapons.clear();
         availablePassiveItems.clear();
+        primaryWeapon = null;
+    }
+
+    public synchronized void setPrimaryWeapon(Weapon weapon) {
+        primaryWeapon = weapon;
+    }
+
+    private boolean canUpgrade(Object upgrade) {
+        return upgrade instanceof Weapon ? ((Weapon) upgrade).getLevel() < 5
+                : ((PassiveItem) upgrade).getLevel() < ((PassiveItem) upgrade).getMaxLevel();
     }
 
     public synchronized void gainXP(int amount, Player player, List<Weapon> weapons, List<PassiveItem> passiveItems) {
@@ -60,18 +72,24 @@ public class LevelManager {
 
     private void offerNextUpgrade() {
         generateUpgradeOptions(availableWeapons, availablePassiveItems);
-        isLevelUping = pendingUpgrades > 0 && !offeredUpgrades.isEmpty();
-        if (!isLevelUping) pendingUpgrades = 0;
+        isLevelUping = pendingUpgrades > 0 && offeredUpgrades.stream().anyMatch(this::canUpgrade);
+        if (!isLevelUping) {
+            pendingUpgrades = 0;
+            offeredUpgrades.clear();
+        }
     }
 
     // ฟังก์ชันสุ่มตัวเลือก 3 ชิ้น
     private void generateUpgradeOptions(List<Weapon> weapons, List<PassiveItem> passiveItems) {
         offeredUpgrades.clear();
         List<Object> pool = new ArrayList<>();
+        if (primaryWeapon != null && weapons.contains(primaryWeapon)) {
+            offeredUpgrades.add(primaryWeapon);
+        }
 
         // กรองเอาเฉพาะอาวุธที่ยังอัปเกรดไม่เต็ม
         for (Weapon w : weapons) {
-            if (w.getLevel() < 5) { // สมมติ max level อาวุธคือ 5
+            if (w != primaryWeapon && w.getLevel() < 5) {
                 pool.add(w);
             }
         }
@@ -87,7 +105,7 @@ public class LevelManager {
         Collections.shuffle(pool);
 
         // ดึงมา 3 ชิ้น (หรือเท่าที่มีหากเหลือไม่ถึง 3)
-        int count = Math.min(3, pool.size());
+        int count = Math.min(MAX_OPTIONS - offeredUpgrades.size(), pool.size());
         for (int i = 0; i < count; i++) {
             offeredUpgrades.add(pool.get(i));
         }
@@ -96,9 +114,11 @@ public class LevelManager {
     public synchronized boolean handleKeyPress(KeyEvent e, Player player) {
         if (!isLevelUping) return false;
 
-        if (e.getKeyCode() == KeyEvent.VK_1) selectUpgrade(0, player);
-        else if (e.getKeyCode() == KeyEvent.VK_2) selectUpgrade(1, player);
-        else if (e.getKeyCode() == KeyEvent.VK_3) selectUpgrade(2, player);
+        if (e.getKeyCode() >= KeyEvent.VK_1 && e.getKeyCode() <= KeyEvent.VK_5) {
+            selectUpgrade(e.getKeyCode() - KeyEvent.VK_1, player);
+        } else if (e.getKeyCode() >= KeyEvent.VK_NUMPAD1 && e.getKeyCode() <= KeyEvent.VK_NUMPAD5) {
+            selectUpgrade(e.getKeyCode() - KeyEvent.VK_NUMPAD1, player);
+        }
 
         return true;
     }
@@ -118,12 +138,13 @@ public class LevelManager {
     }
 
     private Rectangle getUpgradeBounds(int index, int screenWidth) {
-        return new Rectangle(screenWidth / 2 - 210, 200 + index * 90, 420, 75);
+        return new Rectangle(screenWidth / 2 - 280, 200 + index * 82, 560, 72);
     }
 
     private void selectUpgrade(int index, Player player) {
         if (index >= 0 && index < offeredUpgrades.size()) {
             Object selected = offeredUpgrades.get(index);
+            if (!canUpgrade(selected)) return;
 
             if (selected instanceof Weapon) {
                 ((Weapon) selected).levelUp();
@@ -155,7 +176,7 @@ public class LevelManager {
 
         g.setFont(new Font("SansSerif", Font.PLAIN, 18));
         g.setColor(Color.WHITE);
-        String instruction = "Click an item or press 1, 2, 3 to upgrade";
+        String instruction = "Click an item or press 1-5 to upgrade";
         g.drawString(instruction, screenWidth / 2 - g.getFontMetrics().stringWidth(instruction) / 2, 160);
 
         // แสดงผลตัวเลือก 3 ชิ้น
@@ -168,6 +189,8 @@ public class LevelManager {
             String desc = "";
             int currentLv = 0;
             boolean isWeapon = (upgrade instanceof Weapon);
+            boolean isPrimary = upgrade == primaryWeapon;
+            boolean upgradeable = canUpgrade(upgrade);
 
             if (isWeapon) {
                 Weapon w = (Weapon) upgrade;
@@ -182,19 +205,21 @@ public class LevelManager {
             }
 
             // กรอบตัวเลือก
-            g.setColor(new Color(35, 39, 46));
+            g.setColor(upgradeable ? new Color(35, 39, 46) : new Color(25, 27, 30));
             g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-            g.setColor(isWeapon ? Color.CYAN : Color.GREEN); // อาวุธกรอบฟ้า / Item กรอบเขียว
+            g.setColor(!upgradeable ? Color.GRAY : (isPrimary ? Color.YELLOW : (isWeapon ? Color.CYAN : Color.GREEN)));
             g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
             // ชื่อและเลเวล
             g.setFont(new Font("SansSerif", Font.BOLD, 18));
-            g.drawString("[" + (i + 1) + "] " + name + " (Lv." + (currentLv + 1) + ")", screenWidth / 2 - 190, boxY + 30);
+            String levelText = upgradeable ? " (Lv." + (currentLv + 1) + ")" : " (MAX)";
+            g.drawString("[" + (i + 1) + "] " + name + levelText + (isPrimary ? "  [MAIN]" : ""),
+                    bounds.x + 20, boxY + 30);
 
             // คำอธิบาย
             g.setFont(new Font("SansSerif", Font.PLAIN, 13));
             g.setColor(Color.LIGHT_GRAY);
-            g.drawString(desc, screenWidth / 2 - 190, boxY + 55);
+            g.drawString(upgradeable ? desc : "Maximum level reached. Choose another upgrade.", bounds.x + 20, boxY + 55);
         }
     }
 

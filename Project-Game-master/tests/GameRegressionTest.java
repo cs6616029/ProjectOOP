@@ -79,16 +79,17 @@ public final class GameRegressionTest {
             if (manager.isLevelUping()) manager.handleKeyPress(key(INPUT, KeyEvent.VK_1), null);
             check(weapon.getLevel() == 5 && !manager.isLevelUping(), "Maxed pool must resume automatically");
         }
-        for (int row = 0; row < 3; row++) {
+        for (int row = 0; row < 5; row++) {
             manager = new LevelManager();
-            List<Weapon> weapons = Arrays.asList(new SwordWeapon(0), new GarlicWeapon(0), new GunWeapon(0));
+            List<Weapon> weapons = Arrays.asList(new SwordWeapon(0), new GarlicWeapon(0), new GunWeapon(0),
+                    new LaserWeapon(0), new FireStaffWeapon(0));
             manager.gainXP(10, null, weapons, Collections.emptyList());
             Weapon selected = (Weapon) ((List<?>) get(manager, "offeredUpgrades")).get(row);
-            manager.handleMousePress(click(INPUT, 450, 200 + row * 90 + 30, MouseEvent.BUTTON3), null, 900);
-            manager.handleMousePress(click(INPUT, 230, 230, MouseEvent.BUTTON1), null, 900);
+            manager.handleMousePress(click(INPUT, 450, 200 + row * 82 + 30, MouseEvent.BUTTON3), null, 900);
+            manager.handleMousePress(click(INPUT, 160, 230, MouseEvent.BUTTON1), null, 900);
             manager.handleMousePress(click(INPUT, 450, 280, MouseEvent.BUTTON1), null, 900);
             check(manager.isLevelUping(), "Right click, outside click and gap must do nothing");
-            manager.handleMousePress(click(INPUT, 450, 200 + row * 90 + 30, MouseEvent.BUTTON1), null, 900);
+            manager.handleMousePress(click(INPUT, 450, 200 + row * 82 + 30, MouseEvent.BUTTON1), null, 900);
             check(selected.getLevel() == 1 && !manager.isLevelUping(), "Mouse row " + row);
         }
         Player player = new Player(0, 0);

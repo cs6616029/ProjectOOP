@@ -15,3 +15,5 @@ if ($LASTEXITCODE -ne 0) { throw 'Boss combat checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Spawn balance checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.ExplosionEffectTest
 if ($LASTEXITCODE -ne 0) { throw 'Explosion effect checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LevelUpOptionsTest
+if ($LASTEXITCODE -ne 0) { throw 'Level-up option checks failed' }

@@ -61,6 +61,67 @@ public class ExplosionEffectTest {
         fire = BossAttack.dragonFire(dragon, 0, 1000);
         player.y = 300;
         check(fire.update(player, 1900, effects) == 0 && effects.isEmpty(), "Dodged fire does not explode on player");
+        player.x = 0;
+        player.y = 0;
+        ShieldWeapon ring = new ShieldWeapon(1);
+        Enemy first = new Enemy(80, 0, EnemyType.NORMAL, 1);
+        Enemy second = new Enemy(83, 0, EnemyType.NORMAL, 1);
+        Enemy dead = new Enemy(80, 0, EnemyType.NORMAL, 1);
+        first.hp = second.hp = 1000;
+        dead.hp = 0;
+        ring.update(player, List.of(first, second, dead), effects, 10000);
+        check(first.hp == 982 && second.hp == 982 && dead.hp == 0,
+                "Ten Ring keeps contact damage and skips dead enemies");
+        check(effects.size() == 1, "One ring impact creates one explosion even when hitting a crowd");
+        check(Math.abs(effects.get(0).x - Math.cos(0.05) * 75) < 0.001
+                && Math.abs(effects.get(0).y - Math.sin(0.05) * 75) < 0.001,
+                "Ten Ring explosion appears at the ring impact position");
+        ring.update(player, List.of(first, second), effects, 10010);
+        check(effects.size() == 1 && first.hp == 982, "Cooldown does not duplicate ring hits or explosions");
+        verifyAnimation(effects.get(0));
+        effects.clear();
+        ring.update(player, List.of(dead), effects, 10250);
+        check(effects.isEmpty(), "Dead enemies do not trigger ring explosions");
+        ring.update(player, List.of(new Enemy(400, 0, EnemyType.NORMAL, 1)), effects, 10500);
+        check(effects.isEmpty(), "Missed rings do not explode");
+        ring = new ShieldWeapon(2);
+        first = new Enemy(80, 0, EnemyType.NORMAL, 1);
+        second = new Enemy(-80, 0, EnemyType.NORMAL, 1);
+        first.hp = second.hp = 1000;
+        ring.update(player, List.of(first), effects, 20000);
+        check(effects.size() == 1 && first.hp == 976, "First ring hits on its own cooldown");
+        ring.update(player, List.of(first, second), effects, 20010);
+        check(effects.size() == 2 && second.hp == 976 && first.hp == 976,
+                "Second ring immediately hits and explodes while first ring is on cooldown");
+        effects.clear();
+        ring = new ShieldWeapon(1);
+        first = new Enemy(125, 0, EnemyType.NORMAL, 1);
+        first.hp = 1000;
+        ring.update(player, List.of(first), effects, 30000);
+        check(effects.size() == 1 && first.hp == 982, "Visible outer edge of ring triggers contact");
+        effects.clear();
+        ring = new ShieldWeapon(5);
+        first = new Enemy(0, 0, EnemyType.TANK, 1);
+        first.size = 1000;
+        first.hp = 1;
+        ring.update(player, List.of(first), effects, 40000);
+        check(effects.size() == 5, "All five simultaneous contacts explode even on a killing hit");
+        effects.clear();
+        LaserWeapon laser = new LaserWeapon(1);
+        first = new Enemy(100, 0, EnemyType.NORMAL, 1);
+        second = new Enemy(200, 0, EnemyType.NORMAL, 1);
+        Enemy missed = new Enemy(200, 150, EnemyType.NORMAL, 1);
+        first.hp = second.hp = missed.hp = 1000;
+        laser.update(player, List.of(first, second, dead, missed), effects, 50000);
+        check(effects.size() == 2 && first.hp == 974 && second.hp == 974 && missed.hp == 1000,
+                "Laser explodes on each live target hit and skips misses and dead targets");
+        check(effects.get(0).x == first.x && effects.get(1).x == second.x,
+                "Laser explosions appear at hit targets");
+        laser.update(player, List.of(first, second), effects, 50010);
+        check(effects.size() == 2 && first.hp == 974, "Laser does not repeat impact during cooldown");
+        verifyAnimation(effects.get(0));
         System.out.println("PASS: explosion sprite frames, fireball impact, dragon impact, one-shot playback and dodging");
+        System.out.println("PASS: Ten Ring impacts, crowd hits, cooldown, dead enemies and shared Fire Staff animation");
+        System.out.println("PASS: independent rings, visual contact edge, simultaneous killing hits and laser impact explosions");
     }
 }

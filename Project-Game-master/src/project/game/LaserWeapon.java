@@ -50,6 +50,7 @@ public class LaserWeapon extends Weapon {
                     for (Enemy enemy : enemies) {
                         if (enemy.hp > 0 && laserLine.ptSegDist(enemy.x, enemy.y) <= enemy.size / 2.0 + scaleStat(4, 2) / 2.0 + 4) {
                             enemy.hp -= damage;
+                            visualEffects.add(VisualEffect.explosion(enemy.x, enemy.y, scaleStat(51, 7)));
                         }
                     }
 

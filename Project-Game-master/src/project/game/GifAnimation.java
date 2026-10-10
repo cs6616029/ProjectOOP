@@ -134,6 +134,29 @@ final class GifAnimation {
         return frames[frames.length - 1];
     }
 
+    GifAnimation trimTransparentMargins() {
+        int left = frames[0].getWidth(), top = frames[0].getHeight();
+        int right = -1, bottom = -1;
+        for (BufferedImage frame : frames) {
+            for (int y = 0; y < frame.getHeight(); y++) {
+                for (int x = 0; x < frame.getWidth(); x++) {
+                    if ((frame.getRGB(x, y) >>> 24) != 0) {
+                        left = Math.min(left, x);
+                        top = Math.min(top, y);
+                        right = Math.max(right, x);
+                        bottom = Math.max(bottom, y);
+                    }
+                }
+            }
+        }
+        if (right < left) return this;
+        BufferedImage[] cropped = new BufferedImage[frames.length];
+        for (int i = 0; i < frames.length; i++) {
+            cropped[i] = frames[i].getSubimage(left, top, right - left + 1, bottom - top + 1);
+        }
+        return new GifAnimation(cropped, frameEndTimes, durationMillis);
+    }
+
     int getDurationMillis() {
         return durationMillis;
     }

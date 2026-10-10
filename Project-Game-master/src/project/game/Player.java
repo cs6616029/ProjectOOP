@@ -54,6 +54,8 @@ public class Player {
     private final SpriteAnimation walkSprite;
     private final SpriteAnimation southWalkSprite;
     private final int idleFrameIndex;
+    private BufferedImage lastWalkingFrame;
+    private boolean lastWalkingFrameMirrored;
 
     public double x, y;
     public int size = 80;
@@ -114,11 +116,23 @@ public class Player {
         boolean isInvincible = (gameTimeMillis - lastDamageTime) < invincibilityDuration;
         long currentTime = System.currentTimeMillis();
         boolean walkingSouth = moving && lastDirY > 0 && southWalkSprite != walkSprite;
-        SpriteAnimation sprite = !moving ? idleSprite : (walkingSouth ? southWalkSprite : walkSprite);
-        BufferedImage frame = moving ? sprite.frameAt(currentTime, 100)
-                : idleSprite.frameAt(idleFrameIndex, 1);
+        BufferedImage frame;
+        boolean mirrorFrame;
+        if (moving) {
+            SpriteAnimation sprite = walkingSouth ? southWalkSprite : walkSprite;
+            frame = sprite.frameAt(currentTime, 100);
+            mirrorFrame = lastDirX < 0 && !walkingSouth;
+            lastWalkingFrame = frame;
+            lastWalkingFrameMirrored = mirrorFrame;
+        } else if (lastWalkingFrame != null) {
+            frame = lastWalkingFrame;
+            mirrorFrame = lastWalkingFrameMirrored;
+        } else {
+            frame = idleSprite.frameAt(idleFrameIndex, 1);
+            mirrorFrame = false;
+        }
         boolean flash = isInvincible && (gameTimeMillis / 100) % 2 == 0;
-        if (lastDirX < 0 && !walkingSouth) {
+        if (mirrorFrame) {
             g.drawImage(frame, screenX + size / 2, screenY - size / 2,
                     screenX - size / 2, screenY + size / 2,
                     0, 0, frame.getWidth(), frame.getHeight(), null);

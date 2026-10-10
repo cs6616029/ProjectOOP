@@ -195,7 +195,7 @@ public class LevelManager {
             if (isWeapon) {
                 Weapon w = (Weapon) upgrade;
                 name = w.getName();
-                desc = w.getDescription();
+                desc = w.getUpgradeDescription();
                 currentLv = w.getLevel();
             } else {
                 PassiveItem p = (PassiveItem) upgrade;

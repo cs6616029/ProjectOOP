@@ -12,7 +12,7 @@ public class GunWeapon extends Weapon {
     private final List<Bullet> bullets = new ArrayList<>();
 
     public GunWeapon(int level) {
-        super("Gun", "Fires 2 rapid bullets at the nearest enemy", level);
+        super("Gun", "Fires 2 rapid bullets at the nearest enemy", level, 14, 4);
     }
 
     private static class Bullet {
@@ -52,7 +52,7 @@ public class GunWeapon extends Weapon {
                 if (len > 0 && len <= 520) {
                     double dirX = dx / len;
                     double dirY = dy / len;
-                    int dmg = 10 + (level * 4);
+                    int dmg = getDamage();
 
                     // นัดที่ 1
                     bullets.add(new Bullet(player.x, player.y, dirX, dirY, dmg));

@@ -12,7 +12,12 @@ public class HolyWaterWeapon extends Weapon {
     private final List<HolyZone> zones = new ArrayList<>();
 
     public HolyWaterWeapon(int level) {
-        super("Holy Water", "Throws holy water creating damaging pools on the ground for 2s", level);
+        super("Holy Water", "Throws holy water creating damaging pools on the ground for 2s", level, 12, 4);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | " + upgradeStat("Radius", 60, 10);
     }
 
     private static class HolyZone {
@@ -45,8 +50,8 @@ public class HolyWaterWeapon extends Weapon {
                 double offsetX = (Math.random() - 0.5) * 300;
                 double offsetY = (Math.random() - 0.5) * 300;
 
-                int radius = 50 + (level * 10);
-                int dmg = 8 + (level * 4);
+                int radius = scaleStat(60, 10);
+                int dmg = getDamage();
                 zones.add(new HolyZone(player.x + offsetX, player.y + offsetY, radius, dmg, currentTime));
             }
             lastAttackTime = currentTime;

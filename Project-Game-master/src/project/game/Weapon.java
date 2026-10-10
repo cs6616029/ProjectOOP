@@ -7,11 +7,15 @@ public abstract class Weapon {
     protected int level;
     protected String name;
     protected String description;
+    private final int baseDamage;
+    private final int damagePerLevel;
 
-    public Weapon(String name, String description, int level) {
+    public Weapon(String name, String description, int level, int baseDamage, int damagePerLevel) {
         this.name = name;
         this.description = description;
         this.level = level;
+        this.baseDamage = baseDamage;
+        this.damagePerLevel = damagePerLevel;
     }
 
     public abstract void update(Player player, List<Enemy> enemies, List<VisualEffect> visualEffects, long currentTime);
@@ -25,6 +29,24 @@ public abstract class Weapon {
 
     public String getName() { return name; }
     public String getDescription() { return description; }
+    public int getDamage() { return statAtLevel(baseDamage, damagePerLevel, level); }
+
+    protected int scaleStat(int base, int perLevel) {
+        return statAtLevel(base, perLevel, level);
+    }
+
+    private int statAtLevel(int base, int perLevel, int atLevel) {
+        return atLevel <= 0 ? 0 : base + (atLevel - 1) * perLevel;
+    }
+
+    protected String upgradeStat(String label, int base, int perLevel) {
+        return label + " " + statAtLevel(base, perLevel, level) + " -> "
+                + statAtLevel(base, perLevel, Math.min(5, level + 1));
+    }
+
+    public String getUpgradeDescription() {
+        return upgradeStat("Damage", baseDamage, damagePerLevel);
+    }
     public int getLevel() { return level; }
 
     protected Enemy findClosestEnemy(Player player, List<Enemy> enemies) {

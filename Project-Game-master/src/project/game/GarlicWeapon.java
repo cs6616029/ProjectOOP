@@ -9,7 +9,12 @@ public class GarlicWeapon extends Weapon {
     private long lastDmgTime = 0;
 
     public GarlicWeapon(int level) {
-        super("Garlic", "Creates a protective damage aura around the player", level);
+        super("Garlic", "Creates a protective damage aura around the player", level, 10, 4);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | " + upgradeStat("Radius", 56, 10);
     }
 
     @Override
@@ -21,7 +26,7 @@ public class GarlicWeapon extends Weapon {
 
         if (currentTime - lastDmgTime >= effectiveInterval) {
             double auraRadius = getAuraRadius();
-            int damage = 6 + (level * 4);           // ดาเมจแรงขึ้นตามเลเวล
+            int damage = getDamage();
 
             for (Enemy enemy : enemies) {
                 // เช็คระยะห่างระหว่างผู้เล่นกับศัตรู
@@ -34,7 +39,7 @@ public class GarlicWeapon extends Weapon {
     }
 
     private int getAuraRadius() {
-        return 46 + level * 10;
+        return scaleStat(56, 10);
     }
 
     @Override

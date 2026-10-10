@@ -15,7 +15,12 @@ public class LaserWeapon extends Weapon {
     private double startX, startY, endX, endY;
 
     public LaserWeapon(int level) {
-        super("Laser", "Fires a high-energy laser beam at the nearest enemy", level);
+        super("Laser", "Fires a high-energy laser beam at the nearest enemy", level, 26, 8);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | " + upgradeStat("Range", 288, 28);
     }
 
     @Override
@@ -31,19 +36,19 @@ public class LaserWeapon extends Weapon {
                 double dy = target.y - player.y;
                 double len = Math.hypot(dx, dy);
 
-                if (len > 0 && len <= 420) {
-                    double laserRange = 260 + (level * 28);
+                double laserRange = scaleStat(288, 28);
+                if (len > 0 && len <= laserRange + target.size / 2.0) {
                     startX = player.x;
                     startY = player.y;
                     endX = player.x + (dx / len) * laserRange;
                     endY = player.y + (dy / len) * laserRange;
 
-                    int damage = 18 + (level * 8);
+                    int damage = getDamage();
                     Line2D laserLine = new Line2D.Double(startX, startY, endX, endY);
 
                     // ทำดาเมจศัตรูทุกตัวที่ตัดผ่านเส้นเลเซอร์
                     for (Enemy enemy : enemies) {
-                        if (laserLine.ptSegDist(enemy.x, enemy.y) <= enemy.size / 2.0 + 8) {
+                        if (enemy.hp > 0 && laserLine.ptSegDist(enemy.x, enemy.y) <= enemy.size / 2.0 + scaleStat(4, 2) / 2.0 + 4) {
                             enemy.hp -= damage;
                         }
                     }
@@ -73,11 +78,11 @@ public class LaserWeapon extends Weapon {
 
         // วาดเส้นเลเซอร์สีแดงพร้อมประกายสีขาวตรงกลาง
         g.setColor(Color.RED);
-        g.setStroke(new java.awt.BasicStroke(3 + level));
+        g.setStroke(new java.awt.BasicStroke(scaleStat(4, 2)));
         g.drawLine(sx1, sy1, sx2, sy2);
 
         g.setColor(Color.WHITE);
-        g.setStroke(new java.awt.BasicStroke(1 + level));
+        g.setStroke(new java.awt.BasicStroke(scaleStat(2, 1)));
         g.drawLine(sx1, sy1, sx2, sy2);
 
         g.setStroke(new java.awt.BasicStroke(1)); // คืนค่าความหนาเส้น

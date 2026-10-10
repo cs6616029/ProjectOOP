@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 public class SwordWeapon extends Weapon {
+    private static final double SLASH_HALF_ANGLE = Math.toRadians(70);
     private static final GifAnimation SLASH_ANIMATION =
             GifAnimation.load("/project/game/sword/aFwslc.gif");
 
@@ -19,7 +20,12 @@ public class SwordWeapon extends Weapon {
     private double attackAngle;
 
     public SwordWeapon(int level) {
-        super("Sword", "Slashes in an arc in front of the player", level);
+        super("Sword", "Slashes in an arc in front of the player", level, 28, 10);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | " + upgradeStat("Reach", 82, 10);
     }
 
     @Override
@@ -30,22 +36,25 @@ public class SwordWeapon extends Weapon {
         long effectiveCooldown = (long) (baseCooldown * player.attackCooldownMultiplier);
 
         if (currentTime - lastAttackTime >= effectiveCooldown) {
-            attackRadius = 62 + (level * 10);
-            int damage = 18 + (level * 10);
+            attackRadius = scaleStat(82, 10);
+            int damage = getDamage();
 
             double dirX = player.lastDirX;
             double dirY = player.lastDirY;
             attackAngle = Math.atan2(dirY, dirX);
 
             for (Enemy enemy : enemies) {
+                if (enemy.hp <= 0) continue;
                 double ex = enemy.x - player.x;
                 double ey = enemy.y - player.y;
                 double dist = Math.hypot(ex, ey);
 
-                if (dist <= attackRadius + (enemy.size / 2.0) && dist > 0) {
-                    double dot = (ex / dist) * dirX + (ey / dist) * dirY;
-
-                    if (dot >= 0.5) {
+                double enemyRadius = enemy.size / 2.0;
+                if (dist <= attackRadius + enemyRadius) {
+                    double difference = Math.atan2(ey, ex) - attackAngle;
+                    double angleDifference = Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference)));
+                    double edgeAllowance = dist <= enemyRadius ? Math.PI : Math.asin(enemyRadius / dist);
+                    if (angleDifference <= SLASH_HALF_ANGLE + edgeAllowance) {
                         enemy.hp -= damage;
                     }
                 }

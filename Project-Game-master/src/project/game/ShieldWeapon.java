@@ -10,7 +10,12 @@ public class ShieldWeapon extends Weapon {
     private long lastDmgTime = 0;
 
     public ShieldWeapon(int level) {
-        super("Orb Shield", "Summons orbiting shields around you. Higher levels add more shields.", level);
+        super("Orb Shield", "Summons orbiting shields around you. Higher levels add more shields.", level, 18, 6);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | Orbs " + level + " -> " + Math.min(5, level + 1);
     }
 
     @Override
@@ -23,9 +28,9 @@ public class ShieldWeapon extends Weapon {
         }
 
         int shieldCount = level;
-        double orbitRadius = 70 + (level * 5);
-        int shieldSize = 16;
-        int damage = 12 + (level * 6);
+        double orbitRadius = scaleStat(75, 5);
+        int shieldSize = scaleStat(16, 2);
+        int damage = getDamage();
 
         // คำนวณคูลดาวน์ทำดาเมจร่วมกับ Speed Buff ของ Player
         long effectiveInterval = (long) (baseDmgInterval * player.attackCooldownMultiplier);
@@ -51,8 +56,8 @@ public class ShieldWeapon extends Weapon {
         if (level <= 0) return;
 
         int shieldCount = level;
-        double orbitRadius = 70 + (level * 5);
-        int shieldSize = 16;
+        double orbitRadius = scaleStat(75, 5);
+        int shieldSize = scaleStat(16, 2);
 
         g.setColor(new Color(100, 200, 255));
         for (int i = 0; i < shieldCount; i++) {

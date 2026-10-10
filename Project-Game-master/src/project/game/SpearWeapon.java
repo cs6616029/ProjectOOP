@@ -15,7 +15,12 @@ public class SpearWeapon extends Weapon {
     private double startX, startY, endX, endY;
 
     public SpearWeapon(int level) {
-        super("Spear", "Thrusts a narrow straight spear toward the nearest enemy", level);
+        super("Spear", "Thrusts a narrow straight spear toward the nearest enemy", level, 32, 10);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | " + upgradeStat("Range", 138, 18);
     }
 
     @Override
@@ -31,14 +36,14 @@ public class SpearWeapon extends Weapon {
                 double dy = target.y - player.y;
                 double len = Math.hypot(dx, dy);
 
-                if (len > 0 && len <= 280) {
-                    double spearLength = 120 + (level * 18);
+                double spearLength = scaleStat(138, 18);
+                if (len > 0 && len <= spearLength + target.size / 2.0) {
                     startX = player.x;
                     startY = player.y;
                     endX = player.x + (dx / len) * spearLength;
                     endY = player.y + (dy / len) * spearLength;
 
-                    int damage = 22 + (level * 10);
+                    int damage = getDamage();
                     Line2D spearLine = new Line2D.Double(startX, startY, endX, endY);
 
                     for (Enemy enemy : enemies) {
@@ -68,7 +73,7 @@ public class SpearWeapon extends Weapon {
             int sx2 = (int) (endX - camX);
             int sy2 = (int) (endY - camY);
 
-            g.setStroke(new java.awt.BasicStroke(4 + level));
+            g.setStroke(new java.awt.BasicStroke(scaleStat(5, 1)));
             g.drawLine(sx1, sy1, sx2, sy2);
             g.setStroke(new java.awt.BasicStroke(1));
         }

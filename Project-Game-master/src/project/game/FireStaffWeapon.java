@@ -16,7 +16,12 @@ public class FireStaffWeapon extends Weapon {
     private final List<Fireball> fireballs = new ArrayList<>();
 
     public FireStaffWeapon(int level) {
-        super("Fire Staff", "Launches a fireball at nearest enemy that explodes on hit", level);
+        super("Fire Staff", "Launches a fireball at nearest enemy that explodes on hit", level, 22, 7);
+    }
+
+    @Override
+    public String getUpgradeDescription() {
+        return super.getUpgradeDescription() + " | " + upgradeStat("Blast", 51, 7);
     }
 
     private static BufferedImage loadFireImage() {
@@ -42,14 +47,16 @@ public class FireStaffWeapon extends Weapon {
         double speed = 7.0;
         int damage = 1;
         int explosionRadius = 70;
+        int renderWidth;
 
-        Fireball(double x, double y, double dirX, double dirY, int damage, int radius) {
+        Fireball(double x, double y, double dirX, double dirY, int damage, int radius, int renderWidth) {
             this.x = x;
             this.y = y;
             this.dirX = dirX;
             this.dirY = dirY;
             this.damage = damage;
             this.explosionRadius = radius;
+            this.renderWidth = renderWidth;
         }
     }
 
@@ -67,9 +74,9 @@ public class FireStaffWeapon extends Weapon {
                 double len = Math.hypot(dx, dy);
 
                 if (len > 0 && len <= 500) {
-                    int dmg = 15 + (level * 7);
-                    int radius = 44 + (level * 7);
-                    fireballs.add(new Fireball(player.x, player.y, dx / len, dy / len, dmg, radius));
+                    int dmg = getDamage();
+                    int radius = scaleStat(51, 7);
+                    fireballs.add(new Fireball(player.x, player.y, dx / len, dy / len, dmg, radius, scaleStat(56, 6)));
                 }
             }
             lastAttackTime = currentTime;
@@ -83,7 +90,8 @@ public class FireStaffWeapon extends Weapon {
 
             boolean exploded = false;
             for (Enemy enemy : enemies) {
-                if (enemy.hp > 0 && Math.hypot(enemy.x - f.x, enemy.y - f.y) < enemy.size / 2.0 + 8) {
+                double fireRadius = f.renderWidth * FIRE_IMAGE.getHeight() / (double) FIRE_IMAGE.getWidth() / 2.0;
+                if (enemy.hp > 0 && Math.hypot(enemy.x - f.x, enemy.y - f.y) < enemy.size / 2.0 + fireRadius) {
                     exploded = true;
                     break;
                 }
@@ -110,7 +118,7 @@ public class FireStaffWeapon extends Weapon {
         for (Fireball f : fireballs) {
             int sx = (int) (f.x - camX);
             int sy = (int) (f.y - camY);
-            int width = 56;
+            int width = f.renderWidth;
             int height = width * FIRE_IMAGE.getHeight() / FIRE_IMAGE.getWidth();
             Graphics2D fireGraphics = (Graphics2D) g.create();
             fireGraphics.translate(sx, sy);

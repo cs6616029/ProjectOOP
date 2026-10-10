@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -26,6 +27,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     private static final int SCREEN_WIDTH = 900;
     private static final int SCREEN_HEIGHT = 675;
+    private static final BossSkill.Kind[] BOSS_SEQUENCE = BossSkill.Kind.values();
     private Thread gameThread;
     private volatile boolean running = false;
     private final int FPS = 60;
@@ -35,6 +37,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private Graphics2D dbg;
     private final BufferedImage mapBackground;
     private final Player.CharacterType characterType;
+    private final Runnable onReturnToMenu;
 
     private final Set<Integer> activeKeys = new HashSet<>();
 
@@ -64,6 +67,9 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private long spawnInterval = 1100;
 
     private boolean gameOver = false;
+    private boolean gameWon;
+    private boolean paused;
+    private int bossesDefeated;
     private int score = 0;
 
     public VampireSurvivorsGame() {
@@ -71,7 +77,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     public VampireSurvivorsGame(Player.CharacterType characterType, String mapBackgroundResource) {
+        this(characterType, mapBackgroundResource, () -> {});
+    }
+
+    public VampireSurvivorsGame(Player.CharacterType characterType, String mapBackgroundResource,
+            Runnable onReturnToMenu) {
         this.characterType = characterType;
+        this.onReturnToMenu = onReturnToMenu;
         mapBackground = loadMapBackground(mapBackgroundResource);
         setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         setFocusable(true);
@@ -82,7 +94,14 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             public void mousePressed(MouseEvent e) {
                 requestFocusInWindow();
                 synchronized (VampireSurvivorsGame.this) {
-                    if (!gameOver && levelManager.handleMousePress(e, player, SCREEN_WIDTH)
+                    if (gameWon) {
+                        handleVictoryClick(e);
+                    } else if (paused) {
+                        handlePauseClick(e);
+                    } else if (!gameOver && !gameWon && pauseButtonBounds().contains(e.getPoint())) {
+                        setPaused(true);
+                        SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
+                    } else if (!gameOver && !gameWon && levelManager.handleMousePress(e, player, SCREEN_WIDTH)
                             && !levelManager.isLevelUping()) {
                         lastUpdateNanos = System.nanoTime();
                     }
@@ -102,6 +121,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private synchronized void initGame() {
+        paused = false;
         SoundEffects.stop(SoundEffects.Effect.WALKING);
         player = new Player(0, 0, characterType);
         enemies.clear();
@@ -133,6 +153,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         passiveItems.add(new PassiveItem(PassiveItem.ItemType.GLOVES));
 
         gameOver = false;
+        gameWon = false;
+        bossesDefeated = 0;
         score = 0;
         spawnInterval = 1100;
 
@@ -188,7 +210,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         long nowNanos = System.nanoTime();
         long deltaNanos = Math.max(0L, nowNanos - lastUpdateNanos);
         lastUpdateNanos = nowNanos;
-        if (gameOver || levelManager.isLevelUping()) {
+        if (gameOver || gameWon || paused || levelManager.isLevelUping()) {
             SoundEffects.stop(SoundEffects.Effect.WALKING);
             return;
         }
@@ -223,7 +245,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             lastSpawnTime = currentTime;
         }
 
-        if (!hasBossOnField() && elapsedSeconds >= nextBossSpawnSeconds) {
+        if (bossesDefeated < BOSS_SEQUENCE.length && !hasBossOnField()
+                && elapsedSeconds >= nextBossSpawnSeconds) {
             spawnBossAroundPlayer(elapsedSeconds / 60);
             lastBossSpawnMinute = elapsedSeconds;
             nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.FIRST_BOSS_SECONDS;
@@ -244,7 +267,14 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 if (enemy.type == EnemyType.BOSS) {
                     SoundEffects.play(SoundEffects.Effect.BOSS_DEATH);
                     visualEffects.add(VisualEffect.bossDeath(enemy.x, enemy.y, enemy.size));
-                    nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
+                    bossesDefeated++;
+                    if (bossesDefeated == BOSS_SEQUENCE.length) {
+                        gameWon = true;
+                        activeKeys.clear();
+                        SoundEffects.stop(SoundEffects.Effect.WALKING);
+                    } else {
+                        nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
+                    }
                 } else {
                     SoundEffects.play(SoundEffects.Effect.ENEMY_DEATH);
                 }
@@ -323,7 +353,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void damagePlayer(int damage) {
-        if (damage <= 0 || gameOver || gameTimeMillis - player.lastDamageTime < player.invincibilityDuration) return;
+        if (damage <= 0 || gameOver || gameWon
+                || gameTimeMillis - player.lastDamageTime < player.invincibilityDuration) return;
         player.hp = Math.max(0, player.hp - damage);
         player.lastDamageTime = gameTimeMillis;
         if (player.hp == 0) {
@@ -358,7 +389,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         double ex = player.x + Math.cos(angle) * spawnDistance;
         double ey = player.y + Math.sin(angle) * spawnDistance;
 
-        Enemy boss = new Enemy(ex, ey, EnemyType.BOSS, levelManager.getLevel());
+        Enemy boss = new Enemy(ex, ey, EnemyType.BOSS, levelManager.getLevel(),
+                BOSS_SEQUENCE[bossesDefeated]);
         boss.hp += (int) (bossWave * 35 * Enemy.BOSS_HEALTH_MULTIPLIER);
         boss.maxHp = boss.hp;
         enemies.add(boss);
@@ -393,6 +425,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             if (gameOver || levelUpEffect.isFinished(presentationTime)) levelUpEffect = null;
             else levelUpEffect.draw(dbg, player, cameraX, cameraY, levelManager.isLevelUping(), presentationTime);
         }
+        if (paused) drawPauseMenu(dbg);
     }
 
     private void drawInfiniteMap(Graphics2D g) {
@@ -461,17 +494,107 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         levelManager.drawLevelUpUI(g, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        if (gameOver) {
+        if (gameOver || gameWon) {
             g.setColor(new Color(0, 0, 0, 180));
             g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            g.setColor(Color.RED);
+            g.setColor(gameWon ? new Color(105, 235, 145) : Color.RED);
             g.setFont(new Font("SansSerif", Font.BOLD, 48));
-            drawCentered(g, "GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20);
+            drawCentered(g, gameWon ? "YOU WIN!" : "GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 45);
             g.setColor(Color.WHITE);
             g.setFont(new Font("SansSerif", Font.PLAIN, 20));
-            drawCentered(g, "Survived Time: " + timeStr, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 20);
-            drawCentered(g, "Press 'R' to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 55);
+            drawCentered(g, "Survived Time: " + timeStr, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+            drawCentered(g, "Final Score: " + score, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 36);
+            if (gameWon) {
+                drawPauseButton(g, victoryMenuButtonBounds(), "Main Menu");
+            } else {
+                drawCentered(g, "Press 'R' to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 72);
+            }
+        } else {
+            g.setColor(new Color(8, 17, 31, 210));
+            g.fillRoundRect(SCREEN_WIDTH - 108, 16, 88, 34, 10, 10);
+            g.setColor(Color.WHITE);
+            g.drawRoundRect(SCREEN_WIDTH - 108, 16, 88, 34, 10, 10);
+            g.setFont(new Font("SansSerif", Font.BOLD, 14));
+            drawCentered(g, "PAUSE", SCREEN_WIDTH - 64, 38);
         }
+    }
+
+    private void drawPauseMenu(Graphics2D g) {
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        g.setColor(new Color(8, 17, 31, 245));
+        g.fillRoundRect(270, 165, 360, 365, 24, 24);
+        g.setColor(new Color(255, 199, 74));
+        g.setStroke(new java.awt.BasicStroke(2));
+        g.drawRoundRect(270, 165, 360, 365, 24, 24);
+        g.setFont(new Font("SansSerif", Font.BOLD, 38));
+        drawCentered(g, "PAUSED", SCREEN_WIDTH / 2, 225);
+        drawPauseButton(g, resumeButtonBounds(), "Resume");
+        drawPauseButton(g, restartButtonBounds(), "Restart");
+        drawPauseButton(g, mainMenuButtonBounds(), "Main Menu");
+    }
+
+    private void drawPauseButton(Graphics2D g, Rectangle bounds, String label) {
+        g.setColor(new Color(29, 50, 75));
+        g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 12, 12);
+        g.setColor(Color.WHITE);
+        g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 12, 12);
+        g.setFont(new Font("SansSerif", Font.BOLD, 20));
+        drawCentered(g, label, bounds.x + bounds.width / 2, bounds.y + 37);
+    }
+
+    private void handlePauseClick(MouseEvent event) {
+        if (event.getButton() != MouseEvent.BUTTON1) return;
+        if (resumeButtonBounds().contains(event.getPoint())) {
+            setPaused(false);
+            SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
+        } else if (restartButtonBounds().contains(event.getPoint())) {
+            initGame();
+            SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
+        } else if (mainMenuButtonBounds().contains(event.getPoint())) {
+            returnToMenu();
+        }
+    }
+
+    private void handleVictoryClick(MouseEvent event) {
+        if (event.getButton() == MouseEvent.BUTTON1
+                && victoryMenuButtonBounds().contains(event.getPoint())) {
+            returnToMenu();
+        }
+    }
+
+    private void returnToMenu() {
+        running = false;
+        SoundEffects.stop(SoundEffects.Effect.WALKING);
+        SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
+        onReturnToMenu.run();
+    }
+
+    private void setPaused(boolean paused) {
+        this.paused = paused;
+        activeKeys.clear();
+        SoundEffects.stop(SoundEffects.Effect.WALKING);
+        lastUpdateNanos = System.nanoTime();
+    }
+
+    private Rectangle pauseButtonBounds() {
+        return new Rectangle(SCREEN_WIDTH - 108, 16, 88, 34);
+    }
+
+    private Rectangle resumeButtonBounds() {
+        return new Rectangle(310, 260, 280, 58);
+    }
+
+    private Rectangle restartButtonBounds() {
+        return new Rectangle(310, 340, 280, 58);
+    }
+
+    private Rectangle mainMenuButtonBounds() {
+        return new Rectangle(310, 420, 280, 58);
+    }
+
+    private Rectangle victoryMenuButtonBounds() {
+        return new Rectangle(310, SCREEN_HEIGHT / 2 + 95, 280, 58);
     }
 
     private static void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {
@@ -492,7 +615,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     @Override
     public synchronized void keyPressed(KeyEvent e) {
-        if (gameOver) {
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !gameOver && !gameWon) {
+            setPaused(!paused);
+            SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
+            return;
+        }
+        if (paused) return;
+        if (gameOver || gameWon) {
             if (e.getKeyCode() == KeyEvent.VK_R) initGame();
             return;
         }

@@ -10,17 +10,24 @@ public class Main {
 
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);
-            frame.add(new GameStartScreen((characterType, mapResource) -> {
-                VampireSurvivorsGame game = new VampireSurvivorsGame(characterType, mapResource);
-                frame.setContentPane(game);
-                frame.revalidate();
-                frame.repaint();
-                game.startGameThread();
-                game.requestFocusInWindow();
-            }));
+            showStartScreen(frame);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
+    }
+
+    private static void showStartScreen(JFrame frame) {
+        frame.setContentPane(new GameStartScreen((characterType, mapResource) -> {
+            VampireSurvivorsGame game = new VampireSurvivorsGame(
+                    characterType, mapResource, () -> showStartScreen(frame));
+            frame.setContentPane(game);
+            frame.revalidate();
+            frame.repaint();
+            game.startGameThread();
+            game.requestFocusInWindow();
+        }));
+        frame.revalidate();
+        frame.repaint();
     }
 }

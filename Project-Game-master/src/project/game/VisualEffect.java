@@ -16,6 +16,26 @@ public class VisualEffect {
     private boolean enemyDeath;
     private boolean swordHit;
     private boolean batHit;
+    private boolean fireStaffHit;
+    private boolean holyNova;
+    private double fireStaffAngle;
+
+    private static final class HolyNovaAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/holy-nova.png", 10);
+    }
+
+    public static VisualEffect holyNova(double x, double y, int radius) {
+        VisualEffect effect = new VisualEffect(x, y, radius, new Color(255, 239, 170), 40);
+        effect.holyNova = true;
+        return effect;
+    }
+
+    public static VisualEffect fireStaffHit(double x, double y, int radius, double angle) {
+        VisualEffect effect = new VisualEffect(x, y, radius, Color.ORANGE, 20);
+        effect.fireStaffHit = true;
+        effect.fireStaffAngle = angle;
+        return effect;
+    }
 
     public static VisualEffect batHit(double x, double y) {
         VisualEffect effect = new VisualEffect(x, y, 60, new Color(235, 120, 255), BatAttackAnimation.FRAME_COUNT * 3);
@@ -105,6 +125,27 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (holyNova) {
+            Graphics2D impact = (Graphics2D) g.create();
+            impact.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            impact.drawImage(HolyNovaAnimation.SPRITE.frameAt(currentFrame, 4),
+                    sx - radius, sy - radius / 2, radius * 2, radius, null);
+            impact.dispose();
+            return;
+        }
+        if (fireStaffHit) {
+            Graphics2D impact = (Graphics2D) g.create();
+            impact.translate(sx, sy);
+            impact.rotate(fireStaffAngle);
+            impact.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            int width = radius * 4;
+            impact.drawImage(FireStaffAnimation.IMPACT.frameAt(currentFrame, 4),
+                    -width * 3 / 4, -width / 2, width, width, null);
+            impact.dispose();
+            return;
+        }
         if (batHit) {
             g.drawImage(BatAttackAnimation.SPRITE.frameAt(currentFrame, 3),
                     sx - radius, sy - radius, radius * 2, radius * 2, null);

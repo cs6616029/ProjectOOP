@@ -13,12 +13,16 @@ if ($LASTEXITCODE -ne 0) { throw 'Regression checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Boss combat checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.SpawnBalanceTest
 if ($LASTEXITCODE -ne 0) { throw 'Spawn balance checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.FireStaffAnimationTest
+if ($LASTEXITCODE -ne 0) { throw 'Fire Staff animation checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.ExplosionEffectTest
 if ($LASTEXITCODE -ne 0) { throw 'Explosion effect checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LevelUpOptionsTest
 if ($LASTEXITCODE -ne 0) { throw 'Level-up option checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LevelUpEffectTest
 if ($LASTEXITCODE -ne 0) { throw 'Level-up animation checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.SwordOfJusticeTest
+if ($LASTEXITCODE -ne 0) { throw 'Sword of Justice checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.WeaponScalingTest
 if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LaserTravelTest

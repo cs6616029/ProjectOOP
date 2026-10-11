@@ -181,8 +181,11 @@ public final class GameRegressionTest {
             if (item instanceof HolyWaterWeapon) water = (HolyWaterWeapon) item;
         }
         water.levelUp();
+        Enemy justiceTarget = new Enemy(80, 0, EnemyType.NORMAL, 1);
+        justiceTarget.hp = 1000;
+        ((List<Enemy>) get(game, "enemies")).add(justiceTarget);
         call(game, "updateGame");
-        check(((List<?>) get(water, "zones")).size() == 1, "Holy water spawns before pause");
+        check(((List<?>) get(water, "strikes")).size() == 1, "Justice sword spawns before pause");
 
         manager = (LevelManager) get(game, "levelManager");
         weapon = new GunWeapon(0);
@@ -198,7 +201,7 @@ public final class GameRegressionTest {
         call(game, "updateGame");
         check(weapon.getLevel() == 1 && (long) get(game, "elapsedSeconds") == 0
                 && (long) get(game, "lastBossSpawnMinute") == 0, "Mouse resume excludes paused time and boss spawn");
-        check(((List<?>) get(water, "zones")).size() == 1, "Holy water duration and cooldown freeze during menu");
+        check(((List<?>) get(water, "strikes")).size() == 1, "Justice sword duration and cooldown freeze during menu");
         set(game, "lastUpdateNanos", System.nanoTime() - 1_100_000_000L);
         call(game, "updateGame");
         check((long) get(game, "elapsedSeconds") == 1, "Active time still advances");

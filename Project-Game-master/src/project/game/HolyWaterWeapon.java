@@ -1,18 +1,28 @@
 package project.game;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+/** Retains the existing weapon slot while replacing the pool with a falling holy sword. */
 public class HolyWaterWeapon extends Weapon {
-    private long lastAttackTime = 0;
-    private final long cooldown = 2500;
-    private final List<HolyZone> zones = new ArrayList<>();
+    private static final long COOLDOWN = 2500;
+    private static final int FRAME_MILLIS = 64;
+    private static final int IMPACT_MILLIS = 5 * FRAME_MILLIS;
+    private static final int DURATION_MILLIS = 13 * FRAME_MILLIS;
+    private long lastAttackTime;
+    private long animationTime;
+    private final List<JusticeStrike> strikes = new ArrayList<>();
+
+    private static final class Animation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/sword-of-justice.png", 13);
+    }
 
     public HolyWaterWeapon(int level) {
-        super("Holy Water", "Throws holy water creating damaging pools on the ground for 2s", level, 12, 4);
+        super("Sword of Justice", "Summons holy swords above enemies that plunge down and strike once", level, 12, 4);
     }
 
     @Override
@@ -20,76 +30,72 @@ public class HolyWaterWeapon extends Weapon {
         return super.getUpgradeDescription() + " | " + upgradeStat("Radius", 60, 10);
     }
 
-    private static class HolyZone {
-        double x, y;
-        int radius;
-        int damage;
-        long spawnTime;
-        long duration = 2000; // อยู่ได้ 2 วินาที (2000ms)
-        long lastDmgTime = 0;
+    private static final class JusticeStrike {
+        final double x, y, groundY;
+        final int radius, damage;
+        final long spawnedAt;
+        boolean impacted;
 
-        HolyZone(double x, double y, int radius, int damage, long spawnTime) {
-            this.x = x;
-            this.y = y;
+        JusticeStrike(Enemy target, int radius, int damage, long time) {
+            x = target.x;
+            y = target.y;
+            groundY = target.y + target.size * 0.25;
             this.radius = radius;
             this.damage = damage;
-            this.spawnTime = spawnTime;
+            spawnedAt = time;
         }
     }
 
     @Override
-    public void update(Player player, List<Enemy> enemies, List<VisualEffect> visualEffects, long currentTime) {
+    public void update(Player player, List<Enemy> enemies, List<VisualEffect> effects, long currentTime) {
         if (level <= 0) return;
-
-        long effectiveCooldown = (long) (cooldown * player.attackCooldownMultiplier);
-
+        animationTime = currentTime;
+        long effectiveCooldown = (long) (COOLDOWN * player.attackCooldownMultiplier);
         if (currentTime - lastAttackTime >= effectiveCooldown) {
-            int numZones = 1 + (level / 3); // เพิ่มจำนวนขวดตามเลเวล
-            for (int i = 0; i < numZones; i++) {
-                // สุ่มจุดตกใกล้ๆ ตัวผู้เล่น
-                double offsetX = (Math.random() - 0.5) * 300;
-                double offsetY = (Math.random() - 0.5) * 300;
-
-                int radius = scaleStat(60, 10);
-                int dmg = getDamage();
-                zones.add(new HolyZone(player.x + offsetX, player.y + offsetY, radius, dmg, currentTime));
+            List<Enemy> targets = new ArrayList<>();
+            for (Enemy enemy : enemies) {
+                if (enemy.hp > 0 && Math.hypot(enemy.x - player.x, enemy.y - player.y) <= 500) targets.add(enemy);
             }
-            lastAttackTime = currentTime;
+            targets.sort(Comparator.comparingDouble(enemy -> Math.hypot(enemy.x - player.x, enemy.y - player.y)));
+            int count = Math.min(1 + level / 3, targets.size());
+            for (int i = 0; i < count; i++) {
+                strikes.add(new JusticeStrike(targets.get(i), scaleStat(60, 10), getDamage(), currentTime));
+            }
+            if (count > 0) lastAttackTime = currentTime;
         }
-
-        // อัปเดตโซนน้ำมนต์
-        Iterator<HolyZone> zIt = zones.iterator();
-        while (zIt.hasNext()) {
-            HolyZone zone = zIt.next();
-
-            // ทำดาเมจเป็นช่วงๆ ทุกๆ 0.2 วินาที
-            if (currentTime - zone.lastDmgTime >= 200) {
+        Iterator<JusticeStrike> iterator = strikes.iterator();
+        while (iterator.hasNext()) {
+            JusticeStrike strike = iterator.next();
+            long age = currentTime - strike.spawnedAt;
+            if (!strike.impacted && age >= IMPACT_MILLIS) {
+                strike.impacted = true;
+                effects.add(VisualEffect.holyNova(strike.x, strike.groundY, strike.radius));
                 for (Enemy enemy : enemies) {
-                    if (Math.hypot(enemy.x - zone.x, enemy.y - zone.y) <= zone.radius) {
-                        enemy.takeDamage(zone.damage);
-                    }
+                    if (enemy.hp > 0 && Math.hypot(enemy.x - strike.x, enemy.y - strike.y)
+                            <= strike.radius + enemy.size * 0.25) enemy.takeDamage(strike.damage);
                 }
-                zone.lastDmgTime = currentTime;
             }
-
-            // ครบ 2 วินาทีให้หายไป
-            if (currentTime - zone.spawnTime >= zone.duration) {
-                zIt.remove();
-            }
+            if (age >= DURATION_MILLIS) iterator.remove();
         }
     }
 
     @Override
-    public void draw(Graphics2D g, Player player, double camX, double camY) {
-        for (HolyZone zone : zones) {
-            int sx = (int) (zone.x - camX);
-            int sy = (int) (zone.y - camY);
-
-            // วงกลมน้ำมนต์สีฟ้าโปร่งแสง
-            g.setColor(new Color(0, 180, 255, 100));
-            g.fillOval(sx - zone.radius, sy - zone.radius, zone.radius * 2, zone.radius * 2);
-            g.setColor(Color.CYAN);
-            g.drawOval(sx - zone.radius, sy - zone.radius, zone.radius * 2, zone.radius * 2);
+    public void draw(Graphics2D graphics, Player player, double cameraX, double cameraY) {
+        Graphics2D g = (Graphics2D) graphics.create();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        for (JusticeStrike strike : strikes) {
+            long age = Math.max(0, animationTime - strike.spawnedAt);
+            if (age >= IMPACT_MILLIS) continue;
+            double progress = Math.min(1, age / (double) IMPACT_MILLIS);
+            double lift = 150 * (1 - progress * progress);
+            int width = (int) Math.round(strike.radius * 1.6), height = width * 2;
+            int x = (int) Math.round(strike.x - cameraX) - width / 2;
+            int y = (int) Math.round(strike.groundY - cameraY - lift - height);
+            var frame = Animation.SPRITE.frameAt(age, FRAME_MILLIS);
+            // Flip the source vertically so the blade tip leads the downward plunge.
+            g.drawImage(frame, x, y, x + width, y + height,
+                    0, frame.getHeight(), frame.getWidth(), 0, null);
         }
+        g.dispose();
     }
 }

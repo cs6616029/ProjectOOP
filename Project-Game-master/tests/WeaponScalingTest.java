@@ -53,14 +53,11 @@ public class WeaponScalingTest {
                 if (kind == 4) target.size = 150;
                 if (kind == 7) target.size = 1000;
                 List<VisualEffect> effects = new ArrayList<>();
-                int hits = kind == 3 ? 2 : (kind == 7 ? level : (kind == 6 ? 1 + level / 3 : 1));
+                int hits = kind == 3 ? 2 : (kind == 7 ? level : 1);
                 if (kind == 6) {
-                    current.update(player, new ArrayList<>(), effects, 10000);
-                    for (Object zone : (List<?>) get(current, "zones")) {
-                        set(zone, "x", 80.0);
-                        set(zone, "y", 0.0);
-                    }
-                    current.update(player,List.of(target),effects,10200);
+                    current.update(player, List.of(target), effects, 10000);
+                    check(target.hp == 10000, "Justice sword waits until impact");
+                    current.update(player, List.of(target), effects, 10320);
                 } else {
                     current.update(player,List.of(target),effects,10000);
                     if (kind == 2) current.update(player,List.of(target),effects,10100);

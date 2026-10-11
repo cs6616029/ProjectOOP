@@ -61,7 +61,8 @@ public class ExplosionEffectTest {
         List<VisualEffect> effects = new ArrayList<>();
         new FireStaffWeapon(1).update(player, List.of(tank), effects, 10000);
         check(effects.size() == 1, "Fireball creates one explosion on impact");
-        verifyAnimation(effects.get(0));
+        for (int tick = 0; tick < 20; tick++) effects.get(0).update();
+        check(effects.get(0).isFinished(), "Fire Staff impact finishes after its five frames");
 
         effects.clear();
         Enemy dragon = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.DRAGON);
@@ -171,9 +172,9 @@ public class ExplosionEffectTest {
         aura.update(player, List.of(first, second), effects, 70010);
         check(effects.size() == 2 && first.hp == 999, "Aura cooldown prevents repeated explosion every frame");
         verifyAnimation(effects.get(0));
-        System.out.println("PASS: Ten Ring impacts, crowd hits, cooldown, dead enemies and shared Fire Staff animation");
+        System.out.println("PASS: Ten Ring impacts, crowd hits, cooldown, dead enemies and shared explosion animation");
         System.out.println("PASS: independent rings, visual contact edge, simultaneous killing hits and laser impact explosions");
         System.out.println("PASS: shared boss explosion cooldown preserves all ring damage");
-        System.out.println("PASS: Aurafarming impact positions, cooldown and shared Fire Staff explosion frames");
+        System.out.println("PASS: Aurafarming impact positions, cooldown and shared explosion frames");
     }
 }

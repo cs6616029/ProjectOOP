@@ -216,6 +216,9 @@ public final class BossCombatTest {
                 int hp = enemy.hp;
                 weapons.stream().filter(w -> w instanceof LaserWeapon).findFirst().get()
                         .update(player, List.of(enemy), new ArrayList<>(), 10000);
+                check(enemy.hp == hp, "Iron Guardian starting laser waits for travel");
+                weapons.stream().filter(w -> w instanceof LaserWeapon).findFirst().get()
+                        .update(player, List.of(enemy), new ArrayList<>(), 10200);
                 check(enemy.hp < hp, "Iron Guardian starting laser deals damage");
             }
             List<BossAttack> hazards = (List<BossAttack>) get(game, "bossAttacks");

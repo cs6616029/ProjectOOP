@@ -1,21 +1,22 @@
 package project.game;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Line2D;
 import java.util.List;
 
 public class LaserWeapon extends Weapon {
-    private long lastAttackTime = 0;
-    private final long cooldown = 800; // คูลดาวน์พื้นฐาน
-    private boolean isShooting = false;
-    private long shootStartTime = 0;
-    private final long shootDuration = 100; // แสดงเส้นเลเซอร์ 0.1 วินาที
-
-    private double startX, startY, endX, endY;
+    private static final double TRAVEL_SPEED = 900; // Pixels per second of gameplay time.
+    private static final long IMPACT_HOLD_MILLIS = 100;
+    private long lastAttackTime;
+    private final long cooldown = 800;
+    private boolean isShooting, stopped;
+    private long lastTravelTime, stoppedAt;
+    private double startX, startY, endX, endY, dirX, dirY, traveled, range;
+    private int shotDamage, beamWidth, impactRadius;
 
     public LaserWeapon(int level) {
-        super("Laser", "Fires a high-energy laser beam at the nearest enemy", level, 26, 8);
+        super("Laser", "Fires a traveling laser that stops at the first enemy", level, 26, 8);
     }
 
     @Override
@@ -24,69 +25,97 @@ public class LaserWeapon extends Weapon {
     }
 
     @Override
-    public void update(Player player, List<Enemy> enemies, List<VisualEffect> visualEffects, long currentTime) {
-        if (level <= 0) return; // ถ้า level 0 จะยังไม่ทำงาน
-
+    public void update(Player player, List<Enemy> enemies, List<VisualEffect> effects, long currentTime) {
+        if (level <= 0) return;
+        if (isShooting && stopped && currentTime - stoppedAt >= IMPACT_HOLD_MILLIS) isShooting = false;
         long effectiveCooldown = (long) (cooldown * player.attackCooldownMultiplier);
-
-        if (currentTime - lastAttackTime >= effectiveCooldown) {
-            Enemy target = findClosestEnemy(player, enemies); // ค้นหาศัตรูที่ใกล้ที่สุด
+        if (!isShooting && currentTime - lastAttackTime >= effectiveCooldown) {
+            Enemy target = findClosestEnemy(player, enemies);
             if (target != null) {
-                double dx = target.x - player.x;
-                double dy = target.y - player.y;
-                double len = Math.hypot(dx, dy);
-
-                double laserRange = scaleStat(288, 28);
-                if (len > 0 && len <= laserRange + target.size / 2.0) {
-                    startX = player.x;
-                    startY = player.y;
-                    endX = player.x + (dx / len) * laserRange;
-                    endY = player.y + (dy / len) * laserRange;
-
-                    int damage = getDamage();
-                    Line2D laserLine = new Line2D.Double(startX, startY, endX, endY);
-
-                    // ทำดาเมจศัตรูทุกตัวที่ตัดผ่านเส้นเลเซอร์
-                    for (Enemy enemy : enemies) {
-                        if (enemy.hp > 0 && laserLine.ptSegDist(enemy.x, enemy.y) <= enemy.size / 2.0 + scaleStat(4, 2) / 2.0 + 4) {
-                            enemy.takeDamage(damage);
-                            visualEffects.add(VisualEffect.laserHit(enemy.x, enemy.y, scaleStat(51, 7)));
-                        }
-                    }
-
-                   
-
+                double dx = target.x - player.x, dy = target.y - player.y;
+                double distance = Math.hypot(dx, dy);
+                double shotRange = scaleStat(288, 28);
+                if (distance <= shotRange + target.size / 2.0) {
+                    startX = endX = player.x;
+                    startY = endY = player.y;
+                    dirX = distance == 0 ? 1 : dx / distance;
+                    dirY = distance == 0 ? 0 : dy / distance;
+                    range = shotRange;
+                    traveled = 0;
+                    shotDamage = getDamage();
+                    beamWidth = scaleStat(4, 2);
+                    impactRadius = scaleStat(51, 7);
+                    lastTravelTime = currentTime;
+                    stopped = false;
                     isShooting = true;
-                    shootStartTime = currentTime;
                     SoundEffects.play(SoundEffects.Effect.LASER);
                 }
             }
             lastAttackTime = currentTime;
         }
+        if (!isShooting || stopped) return;
 
-        if (isShooting && currentTime - shootStartTime > shootDuration) {
-            isShooting = false;
+        double nextDistance = Math.min(range, traveled + TRAVEL_SPEED * Math.max(0, currentTime - lastTravelTime) / 1000.0);
+        lastTravelTime = currentTime;
+        double nextX = startX + dirX * nextDistance, nextY = startY + dirY * nextDistance;
+        Enemy firstHit = null;
+        double earliestContact = Double.POSITIVE_INFINITY;
+        for (Enemy enemy : enemies) {
+            if (enemy.hp <= 0) continue;
+            double contact = contactTime(endX, endY, nextX, nextY, enemy);
+            if (contact < earliestContact) {
+                earliestContact = contact;
+                firstHit = enemy;
+            }
+        }
+        if (firstHit != null) {
+            endX += (nextX - endX) * earliestContact;
+            endY += (nextY - endY) * earliestContact;
+            firstHit.takeDamage(shotDamage);
+            effects.add(VisualEffect.laserHit(firstHit.x, firstHit.y, impactRadius));
+            stopped = true;
+            stoppedAt = currentTime;
+        } else {
+            endX = nextX;
+            endY = nextY;
+            traveled = nextDistance;
+            if (traveled >= range) {
+                stopped = true;
+                stoppedAt = currentTime;
+            }
         }
     }
 
+    private double contactTime(double x1, double y1, double x2, double y2, Enemy enemy) {
+        double radius = enemy.size / 2.0 + beamWidth / 2.0 + 4;
+        double ox = x1 - enemy.x, oy = y1 - enemy.y;
+        double outside = ox * ox + oy * oy - radius * radius;
+        if (outside <= 0) return 0;
+        double dx = x2 - x1, dy = y2 - y1;
+        double lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared == 0) return Double.POSITIVE_INFINITY;
+        double projection = ox * dx + oy * dy;
+        double discriminant = projection * projection - lengthSquared * outside;
+        if (discriminant < 0) return Double.POSITIVE_INFINITY;
+        double time = (-projection - Math.sqrt(discriminant)) / lengthSquared;
+        return time >= 0 && time <= 1 ? time : Double.POSITIVE_INFINITY;
+    }
+
     @Override
-    public void draw(Graphics2D g, Player player, double camX, double camY) {
-        if (level <= 0 || !isShooting) return;
-
-        int sx1 = (int) (startX - camX);
-        int sy1 = (int) (startY - camY);
-        int sx2 = (int) (endX - camX);
-        int sy2 = (int) (endY - camY);
-
-        // วาดเส้นเลเซอร์สีแดงพร้อมประกายสีขาวตรงกลาง
+    public void draw(Graphics2D graphics, Player player, double camX, double camY) {
+        if (level <= 0 || !isShooting || (startX == endX && startY == endY)) return;
+        Graphics2D g = (Graphics2D) graphics.create();
+        int x1 = (int) (startX - camX), y1 = (int) (startY - camY);
+        int x2 = (int) (endX - camX), y2 = (int) (endY - camY);
+        g.setColor(new Color(255, 40, 35, 100));
+        g.setStroke(new BasicStroke(beamWidth + 4, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+        g.drawLine(x1, y1, x2, y2);
         g.setColor(Color.RED);
-        g.setStroke(new java.awt.BasicStroke(scaleStat(4, 2)));
-        g.drawLine(sx1, sy1, sx2, sy2);
-
+        g.setStroke(new BasicStroke(beamWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+        g.drawLine(x1, y1, x2, y2);
         g.setColor(Color.WHITE);
-        g.setStroke(new java.awt.BasicStroke(scaleStat(2, 1)));
-        g.drawLine(sx1, sy1, sx2, sy2);
-
-        g.setStroke(new java.awt.BasicStroke(1)); // คืนค่าความหนาเส้น
+        g.setStroke(new BasicStroke(Math.max(1, beamWidth / 2f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+        g.drawLine(x1, y1, x2, y2);
+        g.dispose();
     }
 }

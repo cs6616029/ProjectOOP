@@ -126,10 +126,11 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             @Override
             public void mouseMoved(MouseEvent event) {
                 synchronized (VampireSurvivorsGame.this) {
+                    boolean overUpgrade = !paused && !gameOver && !gameWon && levelManager.handleMouseMove(event, SCREEN_WIDTH);
                     pauseHoveredButton = !paused ? -1 : resumeButtonBounds().contains(event.getPoint()) ? 0
                             : restartButtonBounds().contains(event.getPoint()) ? 1
                             : mainMenuButtonBounds().contains(event.getPoint()) ? 2 : -1;
-                    setCursor(java.awt.Cursor.getPredefinedCursor(pauseHoveredButton >= 0
+                    setCursor(java.awt.Cursor.getPredefinedCursor(pauseHoveredButton >= 0 || overUpgrade
                             ? java.awt.Cursor.HAND_CURSOR : java.awt.Cursor.DEFAULT_CURSOR));
                 }
             }
@@ -138,6 +139,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             public void mouseExited(MouseEvent event) {
                 synchronized (VampireSurvivorsGame.this) {
                     pauseHoveredButton = -1;
+                    levelManager.clearHover();
                     setCursor(java.awt.Cursor.getDefaultCursor());
                 }
             }
@@ -397,6 +399,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         if (damage <= 0 || gameOver || gameWon
                 || gameTimeMillis - player.lastDamageTime < player.invincibilityDuration) return;
         player.hp = Math.max(0, player.hp - damage);
+        damageNumbers.add(DamageNumber.playerHit(player.x, player.y - player.getRenderSize() / 2.0, damage));
         player.lastDamageTime = gameTimeMillis;
         if (player.hp == 0) {
             gameOver = true;
@@ -511,16 +514,17 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void drawUI(Graphics2D g) {
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         HealthBar.draw(g, 20, 16, player.hp, player.maxHp);
         g.setColor(Color.WHITE);
 
         levelManager.drawXPBar(g, 20, 64, 296, 43);
 
-        g.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g.setFont(GameStartScreen.pixelFont(24));
         g.drawString("Level: " + levelManager.getLevel(), 330, 32);
         g.drawString("Score: " + score, 330, 50);
 
-        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g.setFont(GameStartScreen.pixelFont(18));
         g.setColor(Color.LIGHT_GRAY);
         StringBuilder itemSummary = new StringBuilder();
         for (Weapon w : weapons) {
@@ -529,14 +533,14 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (PassiveItem p : passiveItems) {
             if (p.getLevel() > 0) itemSummary.append(p.getName()).append(": Lv.").append(p.getLevel()).append(" | ");
         }
-        g.drawString(itemSummary.toString(), 20, 126);
+        GameHudText.drawSkills(g, itemSummary.toString(), 20, 126, SCREEN_WIDTH - 40);
 
         long minutes = elapsedSeconds / 60;
         long seconds = elapsedSeconds % 60;
         String timeStr = String.format("%02d:%02d", minutes, seconds);
-        g.setFont(new Font("SansSerif", Font.BOLD, 22));
+        g.setFont(GameStartScreen.pixelFont(36));
         g.setColor(Color.YELLOW);
-        drawCentered(g, timeStr, SCREEN_WIDTH / 2, 35);
+        drawCentered(g, timeStr, SCREEN_WIDTH - 64, 85);
 
         levelManager.drawLevelUpUI(g, SCREEN_WIDTH, SCREEN_HEIGHT);
 

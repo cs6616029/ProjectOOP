@@ -129,14 +129,15 @@ public class ExplosionEffectTest {
         Enemy missed = new Enemy(200, 150, EnemyType.NORMAL, 1);
         first.hp = second.hp = missed.hp = 1000;
         laser.update(player, List.of(first, second, dead, missed), effects, 50000);
-        check(effects.size() == 2 && first.hp == 974 && second.hp == 974 && missed.hp == 1000,
-                "Laser explodes on each live target hit and skips misses and dead targets");
-        check(effects.get(0).x == first.x && effects.get(1).x == second.x,
-                "Laser explosions appear at hit targets");
-        laser.update(player, List.of(first, second), effects, 50010);
-        check(effects.size() == 2 && first.hp == 974, "Laser does not repeat impact during cooldown");
+        check(effects.isEmpty() && first.hp == 1000, "Traveling laser has no impact at launch");
+        laser.update(player, List.of(second, first, dead, missed), effects, 50100);
+        check(effects.size() == 1 && first.hp == 974 && second.hp == 1000 && missed.hp == 1000,
+                "Laser explodes only on its first live target and skips misses and dead targets");
+        check(effects.get(0).x == first.x && effects.get(0).y == first.y,
+                "Laser explosion appears at the first hit target");
+        laser.update(player, List.of(first, second), effects, 50110);
+        check(effects.size() == 1 && first.hp == 974, "Laser does not repeat impact during cooldown");
         verifyLaserAnimation(effects.get(0));
-        verifyLaserAnimation(effects.get(1));
         System.out.println("PASS: explosion sprite frames, fireball impact, dragon impact, one-shot playback and dodging");
         effects.clear();
         ring = new ShieldWeapon(5);

@@ -10,11 +10,21 @@ final class DamageNumber {
     final int damage;
     private final double x, y;
     private int age;
+    private final boolean playerHit;
 
     DamageNumber(double x, double y, int damage) {
+        this(x, y, damage, false);
+    }
+
+    private DamageNumber(double x, double y, int damage, boolean playerHit) {
         this.x = x;
         this.y = y;
         this.damage = damage;
+        this.playerHit = playerHit;
+    }
+
+    static DamageNumber playerHit(double x, double y, int damage) {
+        return new DamageNumber(x, y, damage, true);
     }
 
     void update() { age++; }
@@ -24,7 +34,7 @@ final class DamageNumber {
         if (isFinished()) return;
         Graphics2D g = (Graphics2D) graphics.create();
         g.setFont(new Font("SansSerif", Font.BOLD, 22));
-        String text = Integer.toString(damage);
+        String text = (playerHit ? "-" : "") + damage;
         int sx = (int) Math.round(x - cameraX) - g.getFontMetrics().stringWidth(text) / 2;
         int sy = (int) Math.round(y - cameraY - age * 0.85);
         int alpha = age < 24 ? 255 : Math.max(0, (DURATION - age) * 255 / 24);
@@ -34,7 +44,7 @@ final class DamageNumber {
                 if (dx != 0 || dy != 0) g.drawString(text, sx + dx, sy + dy);
             }
         }
-        g.setColor(new Color(255, 230, 105, alpha));
+        g.setColor(playerHit ? new Color(255, 90, 90, alpha) : new Color(255, 230, 105, alpha));
         g.drawString(text, sx, sy);
         g.dispose();
     }

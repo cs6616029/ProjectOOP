@@ -77,6 +77,7 @@ public class Player {
     private final double spriteScale;
     private BufferedImage lastWalkingFrame;
     private boolean lastWalkingFrameMirrored;
+    private final java.util.Map<BufferedImage, BufferedImage> hurtFrames = new java.util.IdentityHashMap<>();
 
     public double x, y;
     public int size = 80;
@@ -151,7 +152,8 @@ public class Player {
         int screenX = (int) (x - camX);
         int screenY = (int) (y - camY);
         int renderSize = getRenderSize();
-        boolean isInvincible = (gameTimeMillis - lastDamageTime) < invincibilityDuration;
+        long hurtAge = gameTimeMillis - lastDamageTime;
+        boolean isInvincible = hurtAge >= 0 && hurtAge < invincibilityDuration;
         long currentTime = System.currentTimeMillis();
         boolean walkingSouth = moving && lastDirY > 0 && southWalkSprite != walkSprite;
         boolean walkingNorth = moving && lastDirY < 0 && northWalkSprite != walkSprite;
@@ -170,7 +172,7 @@ public class Player {
             frame = idleSprite.frameAt(idleFrameIndex, 1);
             mirrorFrame = false;
         }
-        boolean flash = isInvincible && (gameTimeMillis / 100) % 2 == 0;
+        boolean flash = isInvincible && (hurtAge / 100) % 2 == 0;
         int shadowWidth = (int) Math.round(renderSize * 0.55);
         int shadowHeight = Math.max(8, (int) Math.round(renderSize * 0.14));
         int visibleBottom = frame.getHeight();
@@ -195,6 +197,7 @@ public class Player {
         shadowGraphics.fillOval(screenX - innerWidth / 2, footY - innerHeight / 2,
                 innerWidth, innerHeight);
         shadowGraphics.dispose();
+        if (flash) frame = hurtFrames.computeIfAbsent(frame, Player::redHurtFrame);
         if (mirrorFrame) {
             g.drawImage(frame, screenX + renderSize / 2, screenY - renderSize / 2,
                     screenX - renderSize / 2, screenY + renderSize / 2,
@@ -203,9 +206,19 @@ public class Player {
             g.drawImage(frame, screenX - renderSize / 2, screenY - renderSize / 2,
                     renderSize, renderSize, null);
         }
-        if (flash) {
-            g.setColor(new Color(255, 0, 0, 110));
-            g.fillOval(screenX - renderSize / 2, screenY - renderSize / 2, renderSize, renderSize);
+    }
+
+    private static BufferedImage redHurtFrame(BufferedImage source) {
+        BufferedImage red = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int pixel = source.getRGB(x, y);
+                int brightness = (((pixel >>> 16) & 255) * 3 + ((pixel >>> 8) & 255) * 6 + (pixel & 255)) / 10;
+                int r = 140 + brightness * 115 / 255;
+                int gb = brightness / 5;
+                red.setRGB(x, y, (pixel & 0xff000000) | (r << 16) | (gb << 8) | gb);
+            }
         }
+        return red;
     }
 }

@@ -52,6 +52,7 @@ public class DamageNumberTest {
                     weapon.update(player, List.of(target), effects, 10200);
                 } else {
                     weapon.update(player, List.of(target), effects, 10000);
+                    if (kind == 2) weapon.update(player, List.of(target), effects, 10100);
                     if (kind == 3) {
                         for (int tick = 1; tick < 8; tick++) weapon.update(player, List.of(target), effects, 10000 + tick * 16);
                     }

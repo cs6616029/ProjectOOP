@@ -63,7 +63,6 @@ public final class GameStartScreen extends JPanel {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         drawBackground(g);
         if(page==Page.START) drawStartPage(g); else if(page==Page.PLAYER) drawPlayerPage(g); else drawMapPage(g);
-        text(g,"FONT: BOLDPIXELS BY YUKIPIXELS",10,MUTED,48,586);
         rightText(g,"VAMPIRE SURVIVORS",10,MUTED,752,586); g.dispose();
     }
     private void drawBackground(Graphics2D g) {

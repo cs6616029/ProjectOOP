@@ -1,7 +1,5 @@
 package project.game;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
@@ -18,6 +16,7 @@ public class LevelManager {
     private int xpToNextLevel = 10;
     private boolean isLevelUping = false;
     private int pendingUpgrades;
+    private int hoveredUpgrade = -1;
     private final List<Weapon> availableWeapons = new ArrayList<>();
     private final List<PassiveItem> availablePassiveItems = new ArrayList<>();
 
@@ -33,6 +32,7 @@ public class LevelManager {
         this.xp = 0;
         this.xpToNextLevel = 10;
         this.isLevelUping = false;
+        hoveredUpgrade = -1;
         this.offeredUpgrades.clear();
         pendingUpgrades = 0;
         availableWeapons.clear();
@@ -137,6 +137,21 @@ public class LevelManager {
         return true;
     }
 
+    synchronized boolean handleMouseMove(MouseEvent event, int screenWidth) {
+        hoveredUpgrade = -1;
+        if (!isLevelUping) return false;
+        for (int i = 0; i < offeredUpgrades.size(); i++) {
+            if (canUpgrade(offeredUpgrades.get(i)) && getUpgradeBounds(i, screenWidth).contains(event.getPoint())) {
+                hoveredUpgrade = i;
+                break;
+            }
+        }
+        return hoveredUpgrade >= 0;
+    }
+
+    synchronized void clearHover() { hoveredUpgrade = -1; }
+
+
     private Rectangle getUpgradeBounds(int index, int screenWidth) {
         return new Rectangle(screenWidth / 2 - 280, 200 + index * 82, 560, 72);
     }
@@ -154,6 +169,7 @@ public class LevelManager {
             }
 
             pendingUpgrades--;
+            hoveredUpgrade = -1;
             if (pendingUpgrades > 0) {
                 offerNextUpgrade();
             } else {
@@ -165,64 +181,18 @@ public class LevelManager {
 
     public synchronized void drawLevelUpUI(Graphics2D g, int screenWidth, int screenHeight) {
         if (!isLevelUping) return;
-
-        // ฉากหลังดำโปร่งแสง
-        g.setColor(new Color(0, 0, 0, 200));
-        g.fillRect(0, 0, screenWidth, screenHeight);
-
-        // หัวข้อ Level Up
-        g.setColor(Color.YELLOW);
-        g.setFont(new Font("SansSerif", Font.BOLD, 36));
-        g.drawString("LEVEL UP!", screenWidth / 2 - 100, 95);
-
-        g.setFont(new Font("SansSerif", Font.PLAIN, 18));
-        g.setColor(Color.WHITE);
-        String instruction = "Click an item or press 1-5 to upgrade";
-        g.drawString(instruction, screenWidth / 2 - g.getFontMetrics().stringWidth(instruction) / 2, 120);
-
-        // แสดงผลตัวเลือก 3 ชิ้น
+        UpgradeMenuOverlay.drawBackground(g, screenWidth, screenHeight, level);
         for (int i = 0; i < offeredUpgrades.size(); i++) {
             Object upgrade = offeredUpgrades.get(i);
-            Rectangle bounds = getUpgradeBounds(i, screenWidth);
-            int boxY = bounds.y;
-
-            String name = "";
-            String desc = "";
-            int currentLv = 0;
-            boolean isWeapon = (upgrade instanceof Weapon);
-            boolean isPrimary = upgrade == primaryWeapon;
-            boolean upgradeable = canUpgrade(upgrade);
-
-            if (isWeapon) {
-                Weapon w = (Weapon) upgrade;
-                name = w.getName();
-                desc = w.getUpgradeDescription();
-                currentLv = w.getLevel();
-            } else {
-                PassiveItem p = (PassiveItem) upgrade;
-                name = p.getName();
-                desc = p.getDescription();
-                currentLv = p.getLevel();
-            }
-
-            // กรอบตัวเลือก
-            g.setColor(upgradeable ? new Color(35, 39, 46) : new Color(25, 27, 30));
-            g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-            g.setColor(!upgradeable ? Color.GRAY : (isPrimary ? Color.YELLOW : (isWeapon ? Color.CYAN : Color.GREEN)));
-            g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
-
-            // ชื่อและเลเวล
-            g.setFont(new Font("SansSerif", Font.BOLD, 18));
-            String levelText = upgradeable ? " (Lv." + (currentLv + 1) + ")" : " (MAX)";
-            g.drawString("[" + (i + 1) + "] " + name + levelText + (isPrimary ? "  [MAIN]" : ""),
-                    bounds.x + 20, boxY + 30);
-
-            // คำอธิบาย
-            g.setFont(new Font("SansSerif", Font.PLAIN, 13));
-            g.setColor(Color.LIGHT_GRAY);
-            g.drawString(upgradeable ? desc : "Maximum level reached. Choose another upgrade.", bounds.x + 20, boxY + 55);
+            boolean weapon = upgrade instanceof Weapon;
+            String name = weapon ? ((Weapon) upgrade).getName() : ((PassiveItem) upgrade).getName();
+            String description = weapon ? ((Weapon) upgrade).getUpgradeDescription() : ((PassiveItem) upgrade).getDescription();
+            int currentLevel = weapon ? ((Weapon) upgrade).getLevel() : ((PassiveItem) upgrade).getLevel();
+            UpgradeMenuOverlay.drawCard(g, getUpgradeBounds(i, screenWidth), i, name, description, currentLevel,
+                    upgrade == primaryWeapon, weapon, canUpgrade(upgrade), hoveredUpgrade == i);
         }
     }
+
 
     public synchronized void drawXPBar(Graphics2D g, int x, int y, int width, int height) {
         HealthBar.drawXP(g, x, y, xp, xpToNextLevel, width, height);

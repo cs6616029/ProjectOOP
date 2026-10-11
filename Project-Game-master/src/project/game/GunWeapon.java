@@ -155,7 +155,7 @@ public class GunWeapon extends Weapon {
                     b.burst.impactY = b.y;
                 }
                 if (firstHit.hp > 0) {
-                    firstHit.hp -= b.damage;
+                    firstHit.takeDamage(b.damage);
                     visualEffects.add(VisualEffect.bulletHit(b.x, b.y));
                 }
                 b.active = false;

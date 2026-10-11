@@ -41,7 +41,7 @@ public class GarlicWeapon extends Weapon {
             int damage = getDamage();
             for (Enemy enemy : enemies) {
                 if (enemy.hp > 0 && Math.hypot(enemy.x - player.x, enemy.y - player.y) <= auraRadius + enemy.size / 2.0) {
-                    enemy.hp -= damage;
+                    enemy.takeDamage(damage);
                     visualEffects.add(VisualEffect.explosion(enemy.x, enemy.y, scaleStat(51, 7)));
                 }
             }

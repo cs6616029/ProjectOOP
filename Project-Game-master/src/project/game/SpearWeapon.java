@@ -48,7 +48,7 @@ public class SpearWeapon extends Weapon {
 
                     for (Enemy enemy : enemies) {
                         if (spearLine.ptSegDist(enemy.x, enemy.y) <= enemy.size / 2.0 + 5) {
-                            enemy.hp -= damage;
+                            enemy.takeDamage(damage);
                         }
                     }
 

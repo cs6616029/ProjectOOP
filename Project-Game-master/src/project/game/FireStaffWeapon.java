@@ -102,7 +102,7 @@ public class FireStaffWeapon extends Weapon {
                 // ทำดาเมจเป็นวงระเบิด
                 for (Enemy enemy : enemies) {
                     if (enemy.hp > 0 && Math.hypot(enemy.x - f.x, enemy.y - f.y) <= f.explosionRadius + enemy.size / 2.0) {
-                        enemy.hp -= f.damage;
+                        enemy.takeDamage(f.damage);
                     }
                 }
                 // เอฟเฟกต์วงกลมระเบิด

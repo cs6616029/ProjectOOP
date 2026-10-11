@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.ArrayList;
 
 public class Enemy {
     static final int BOSS_HEALTH_MULTIPLIER = 3;
@@ -36,6 +37,21 @@ public class Enemy {
     private boolean facingLeft;
     private final BossSkill bossSkill;
     private long nextRangedAttack = -1;
+    private final List<DamageNumber> pendingDamageNumbers = new ArrayList<>();
+    private int damageNumberSequence;
+
+    void takeDamage(int amount) {
+        if (hp <= 0 || amount <= 0) return;
+        hp -= amount;
+        // Stagger simultaneous hits so separate skills remain readable.
+        int offset = damageNumberSequence++ % 3 - 1;
+        pendingDamageNumbers.add(new DamageNumber(x + offset * 18, y - size * 0.25, amount));
+    }
+
+    void collectDamageNumbers(List<DamageNumber> numbers) {
+        numbers.addAll(pendingDamageNumbers);
+        pendingDamageNumbers.clear();
+    }
 
     boolean isBat() {
         return sprite == FAST_SPRITES[1];

@@ -66,7 +66,7 @@ public class ShieldWeapon extends Weapon {
                 double contactX = (enemy.x - shieldX) / (enemy.size / 2.0 + ringHalfWidth);
                 double contactY = (enemy.y - shieldY) / (enemy.size / 2.0 + ringHalfHeight);
                 if (contactX * contactX + contactY * contactY <= 1) {
-                    if (damageReady && enemy.hp > 0) enemy.hp -= damage;
+                    if (damageReady && enemy.hp > 0) enemy.takeDamage(damage);
                     hitEnemy = true;
                     if (enemy.type == EnemyType.BOSS) {
                         Long lastExplosion = lastBossExplosions.get(enemy);

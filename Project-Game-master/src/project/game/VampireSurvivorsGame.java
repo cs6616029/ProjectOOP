@@ -48,6 +48,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Gem> gems = new ArrayList<>();
     private final List<VisualEffect> visualEffects = new ArrayList<>();
+    private final List<DamageNumber> damageNumbers = new ArrayList<>();
     private final List<BossAttack> bossAttacks = new ArrayList<>();
     private final List<Weapon> weapons = new ArrayList<>();
     private final List<PassiveItem> passiveItems = new ArrayList<>();
@@ -130,6 +131,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         enemies.clear();
         gems.clear();
         visualEffects.clear();
+        damageNumbers.clear();
         bossAttacks.clear();
         weapons.clear();
         passiveItems.clear();
@@ -240,6 +242,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         cameraY = player.y - (SCREEN_HEIGHT / 2.0);
 
         long currentTime = gameTimeMillis;
+        damageNumbers.removeIf(number -> {
+            number.update();
+            return number.isFinished();
+        });
         for (Weapon weapon : weapons) {
             weapon.update(player, enemies, visualEffects, currentTime);
         }
@@ -268,6 +274,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         Iterator<Enemy> eIt = enemies.iterator();
         while (eIt.hasNext()) {
             Enemy enemy = eIt.next();
+            enemy.collectDamageNumbers(damageNumbers);
 
             if (enemy.hp <= 0) {
                 if (enemy.type == EnemyType.BOSS) {
@@ -423,6 +430,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (VisualEffect ve : visualEffects) ve.draw(dbg, cameraX, cameraY);
 
         player.draw(dbg, cameraX, cameraY);
+        for (DamageNumber number : damageNumbers) number.draw(dbg, cameraX, cameraY);
         if (xpPickupEffect != null) {
             long pickupTime = System.nanoTime();
             if (gameOver || xpPickupEffect.isFinished(pickupTime)) xpPickupEffect = null;

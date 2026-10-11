@@ -66,7 +66,7 @@ public class HolyWaterWeapon extends Weapon {
             if (currentTime - zone.lastDmgTime >= 200) {
                 for (Enemy enemy : enemies) {
                     if (Math.hypot(enemy.x - zone.x, enemy.y - zone.y) <= zone.radius) {
-                        enemy.hp -= zone.damage;
+                        enemy.takeDamage(zone.damage);
                     }
                 }
                 zone.lastDmgTime = currentTime;

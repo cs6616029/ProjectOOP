@@ -49,7 +49,7 @@ public class LaserWeapon extends Weapon {
                     // ทำดาเมจศัตรูทุกตัวที่ตัดผ่านเส้นเลเซอร์
                     for (Enemy enemy : enemies) {
                         if (enemy.hp > 0 && laserLine.ptSegDist(enemy.x, enemy.y) <= enemy.size / 2.0 + scaleStat(4, 2) / 2.0 + 4) {
-                            enemy.hp -= damage;
+                            enemy.takeDamage(damage);
                             visualEffects.add(VisualEffect.laserHit(enemy.x, enemy.y, scaleStat(51, 7)));
                         }
                     }

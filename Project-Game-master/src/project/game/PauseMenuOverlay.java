@@ -19,7 +19,7 @@ final class PauseMenuOverlay {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         g.setColor(new Color(5, 10, 13, 200));
         g.fillRect(0, 0, width, height);
-        int x = width / 2 - 204, y = 128, panelWidth = 408, panelHeight = 428;
+        int x = width / 2 - 204, y = 128, panelWidth = 408, panelHeight = 458;
         g.setColor(new Color(0, 0, 0, 130));
         g.fillRect(x + 7, y + 8, panelWidth, panelHeight);
         g.setColor(PANEL);
@@ -44,10 +44,12 @@ final class PauseMenuOverlay {
         drawButton(g, resume, "RESUME  >", true, hovered == 0);
         drawButton(g, restart, "RESTART", false, hovered == 1);
         drawButton(g, menu, "< MAIN MENU", false, hovered == 2);
-        center(g, "YOUR ADVENTURE IS WAITING", 12, MUTED, width / 2, 508);
-        center(g, "ESC TO RESUME", 14, GOLD, width / 2, 535);
+        drawButton(g, audioButtonBounds(width), "AUDIO SETTINGS", false, hovered == 3);
+        center(g, "ESC TO RESUME", 14, GOLD, width / 2, 565);
         g.dispose();
     }
+
+    static Rectangle audioButtonBounds(int width) { return new Rectangle(width / 2 - 140, 494, 280, 38); }
 
     static void drawButton(Graphics2D graphics, Rectangle bounds, String label, boolean primary, boolean hovered) {
         Graphics2D g = (Graphics2D) graphics.create();

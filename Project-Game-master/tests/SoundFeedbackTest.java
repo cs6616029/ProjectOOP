@@ -29,7 +29,7 @@ public class SoundFeedbackTest {
     }
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        for (String name : List.of("classic_hurt.wav", "sword-slash.wav")) {
+        for (String name : List.of("classic_hurt.wav", "sword-slash.wav", "effect-frost.wav")) {
             try (var audio = AudioSystem.getAudioInputStream(SoundFeedbackTest.class.getResource("/project/game/sounds/" + name))) {
                 check(audio.getFormat().getSampleSizeInBits() == 16 && audio.getFormat().getSampleRate() == 44100,
                         "MP3 is packaged as compatible PCM WAV");
@@ -37,8 +37,9 @@ public class SoundFeedbackTest {
             }
         }
         Map<SoundEffects.Effect, Clip> clips = (Map<SoundEffects.Effect, Clip>) field(SoundEffects.class, "clips").get(null);
-        Playback hurt = new Playback(), slash = new Playback();
+        Playback hurt = new Playback(), slash = new Playback(), frost = new Playback();
         clips.put(SoundEffects.Effect.PLAYER_HURT, hurt.clip()); clips.put(SoundEffects.Effect.SWORD, slash.clip());
+        clips.put(SoundEffects.Effect.FROST_HAMMER, frost.clip());
         check(field(SoundEffects.Effect.class, "resourceName").get(SoundEffects.Effect.SWORD).equals("sword-slash.wav"),
                 "Sword effect uses the newly supplied sound");
         VampireSurvivorsGame game = new VampireSurvivorsGame();
@@ -82,6 +83,24 @@ public class SoundFeedbackTest {
             skeleton.updateMeleeAttack(fighter, 40460);
             check(slash.starts == 4, "Cancelled Skeleton slash stays silent");
         }
-        System.out.println("PASS: supplied sounds decode as PCM, hurt on real and lethal damage, silent invincibility, sword replacement and replay");
+        SpearWeapon hammer = new SpearWeapon(1);
+        Player mage = new Player(0, 0);
+        Enemy target = new Enemy(120, 0, EnemyType.NORMAL, 1); target.hp = 1000;
+        hammer.update(mage, List.of(), new ArrayList<>(), 49000);
+        check(frost.starts == 0, "Hammer without a target stays silent");
+        hammer.update(mage, List.of(target), new ArrayList<>(), 50000);
+        hammer.update(mage, List.of(target), new ArrayList<>(), 50479);
+        check(frost.starts == 0, "Hammer windup stays silent until impact");
+        hammer.update(mage, List.of(target), new ArrayList<>(), 50480);
+        check(frost.starts == 1 && target.hp == 968, "Frost sound plays exactly with impact damage");
+        hammer.update(mage, List.of(target), new ArrayList<>(), 50480);
+        hammer.update(mage, List.of(target), new ArrayList<>(), 50800);
+        check(frost.starts == 1, "Impact sound plays once per slam");
+        hammer.update(mage, List.of(target), new ArrayList<>(), 51200);
+        target.x = 1000;
+        hammer.update(mage, List.of(target), new ArrayList<>(), 51680);
+        check(frost.starts == 2 && frost.stops == 1 && target.hp == 968,
+                "Next ground slam replays frost sound even if target dodges and previous audio is still running");
+        System.out.println("PASS: PCM audio, accepted hurt, sword replay, Skeleton slash timing, Frost Hammer impact timing and replay");
     }
 }

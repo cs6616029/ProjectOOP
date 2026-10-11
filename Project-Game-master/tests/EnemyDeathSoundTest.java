@@ -30,8 +30,9 @@ public class EnemyDeathSoundTest {
     }
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        for (String name : List.of("crab", "dragon", "skeleton", "dog", "slime", "goblin")) {
-            try (var audio = AudioSystem.getAudioInputStream(EnemyDeathSoundTest.class.getResource("/project/game/sounds/" + name + "-dead.wav"))) {
+        for (String name : List.of("crab-dead.wav", "dragon-dead.wav", "skeleton-dead.wav", "dog-dead.wav",
+                "slime-dead.wav", "goblin-dead.wav", "normal-dead1.wav")) {
+            try (var audio = AudioSystem.getAudioInputStream(EnemyDeathSoundTest.class.getResource("/project/game/sounds/" + name))) {
                 check(audio.getFormat().getSampleSizeInBits() == 16 && audio.getFormat().getSampleRate() == 44100
                         && audio.getFrameLength() > 1000 && audio.readNBytes(4096).length == 4096,
                         "Supplied death sound decodes as playable PCM: " + name);
@@ -41,12 +42,13 @@ public class EnemyDeathSoundTest {
         Map<SoundEffects.Effect, Playback> playback = new EnumMap<>(SoundEffects.Effect.class);
         for (SoundEffects.Effect sound : List.of(SoundEffects.Effect.CRAB_DEATH, SoundEffects.Effect.DRAGON_DEATH,
                 SoundEffects.Effect.SKELETON_DEATH, SoundEffects.Effect.DOG_DEATH, SoundEffects.Effect.SLIME_DEATH,
-                SoundEffects.Effect.GOBLIN_DEATH, SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.BOSS_DEATH)) {
+                SoundEffects.Effect.GOBLIN_DEATH, SoundEffects.Effect.GREEN_MONSTER_DEATH,
+                SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.BOSS_DEATH)) {
             Playback state = new Playback(); playback.put(sound, state); clips.put(sound, state.clip());
         }
         List<Enemy> fixtures = new ArrayList<>(); List<SoundEffects.Effect> expected = new ArrayList<>();
         Object[] normalSprites = (Object[]) field(Enemy.class, "NORMAL_SPRITES").get(null);
-        SoundEffects.Effect[] normalSounds = {SoundEffects.Effect.SLIME_DEATH, SoundEffects.Effect.DOG_DEATH,
+        SoundEffects.Effect[] normalSounds = {SoundEffects.Effect.SLIME_DEATH, SoundEffects.Effect.GREEN_MONSTER_DEATH,
                 SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.GOBLIN_DEATH};
         for (int index = 0; index < normalSprites.length; index++) {
             Enemy enemy = new Enemy(0, 0, EnemyType.NORMAL, 1);
@@ -91,6 +93,6 @@ public class EnemyDeathSoundTest {
             update.invoke(game);
             check(playback.get(sound).starts == previous + 1, "Removed enemies cannot replay death sounds");
         }
-        System.out.println("PASS: six supplied death sounds, all monster appearances and boss kinds, single playback, generic fallback, scores and EXP drops");
+        System.out.println("PASS: seven supplied death sounds including green monster, all appearances and bosses, single playback, generic fallback, scores and EXP drops");
     }
 }

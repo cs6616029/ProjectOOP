@@ -23,11 +23,13 @@ final class SoundEffects {
         DRAGON_DEATH("dragon-dead.wav"),
         SKELETON_DEATH("skeleton-dead.wav"),
         DOG_DEATH("dog-dead.wav"),
+        GREEN_MONSTER_DEATH("normal-dead1.wav"),
         SLIME_DEATH("slime-dead.wav"),
         GOBLIN_DEATH("goblin-dead.wav"),
         LEVEL_UP("level-up.wav"),
         LASER("Laser (1).wav"),
         SWORD("sword-slash.wav"),
+        FROST_HAMMER("effect-frost.wav"),
         PLAYER_HURT("classic_hurt.wav"),
         FLAME("flames-effect.wav"),
         EXPLOSION("explosion.wav"),
@@ -47,14 +49,46 @@ final class SoundEffects {
     private static final String RESOURCE_DIRECTORY = "/project/game/sounds/";
     private static final Map<Effect, Clip> clips = new EnumMap<>(Effect.class);
     private static final Set<Effect> loadAttempts = EnumSet.noneOf(Effect.class);
+    private static double soundVolume = 1.0, musicVolume = 0.25;
 
     private SoundEffects() {}
 
+    static synchronized double getSoundVolume() { return soundVolume; }
+    static synchronized double getMusicVolume() { return musicVolume; }
+    static synchronized void setSoundVolume(double volume) { setVolume(false, volume); }
+    static synchronized void setMusicVolume(double volume) { setVolume(true, volume); }
+
+    private static boolean isMusic(Effect effect) { return effect.name().startsWith("MUSIC_"); }
+    private static double volume(Effect effect) { return isMusic(effect) ? musicVolume : soundVolume; }
+
+    private static void setVolume(boolean music, double value) {
+        double level = Double.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+        if (music) musicVolume = level; else soundVolume = level;
+        for (var entry : clips.entrySet()) {
+            if (isMusic(entry.getKey()) == music) {
+                applyVolume(entry.getValue(), level);
+                if (level == 0 && entry.getValue().isRunning()) entry.getValue().stop();
+            }
+        }
+    }
+
+    private static void applyVolume(Clip clip, double level) {
+        if (clip.isControlSupported(javax.sound.sampled.BooleanControl.Type.MUTE)) {
+            ((javax.sound.sampled.BooleanControl) clip.getControl(javax.sound.sampled.BooleanControl.Type.MUTE)).setValue(level == 0);
+        }
+        if (clip.isControlSupported(javax.sound.sampled.FloatControl.Type.MASTER_GAIN)) {
+            var gain = (javax.sound.sampled.FloatControl) clip.getControl(javax.sound.sampled.FloatControl.Type.MASTER_GAIN);
+            float decibels = level == 0 ? gain.getMinimum() : (float) (20 * Math.log10(level));
+            gain.setValue(Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), decibels)));
+        }
+    }
+
     static synchronized void play(Effect effect) {
+        if (volume(effect) == 0) return;
         Clip clip = getClip(effect);
         if (clip == null) return;
         if (clip.isRunning()) {
-            if (effect != Effect.SWORD && effect != Effect.PLAYER_HURT) return;
+            if (effect != Effect.SWORD && effect != Effect.PLAYER_HURT && effect != Effect.FROST_HAMMER) return;
             clip.stop();
         }
 
@@ -63,6 +97,7 @@ final class SoundEffects {
     }
 
     static synchronized void loop(Effect effect) {
+        if (volume(effect) == 0) return;
         Clip clip = getClip(effect);
         if (clip == null || clip.isRunning()) return;
 
@@ -76,6 +111,7 @@ final class SoundEffects {
     }
 
     static synchronized void resumeLoop(Effect effect) {
+        if (volume(effect) == 0) return;
         Clip clip = getClip(effect);
         if (clip != null && !clip.isRunning()) clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
@@ -100,10 +136,7 @@ final class SoundEffects {
         try (AudioInputStream audio = AudioSystem.getAudioInputStream(resource)) {
             Clip clip = AudioSystem.getClip();
             clip.open(audio);
-            if (effect.name().startsWith("MUSIC_") && clip.isControlSupported(javax.sound.sampled.FloatControl.Type.MASTER_GAIN)) {
-                var gain = (javax.sound.sampled.FloatControl) clip.getControl(javax.sound.sampled.FloatControl.Type.MASTER_GAIN);
-                gain.setValue(Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), -12f)));
-            }
+            applyVolume(clip, volume(effect));
             return clip;
         } catch (IOException | LineUnavailableException | UnsupportedAudioFileException exception) {
             System.err.println("Unable to load sound effect " + resourcePath + ": " + exception.getMessage());

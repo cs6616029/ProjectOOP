@@ -120,7 +120,8 @@ public class Enemy {
         };
         if (type == EnemyType.TANK) return SoundEffects.Effect.CRAB_DEATH;
         if (sprite == NORMAL_SPRITES[0]) return SoundEffects.Effect.SLIME_DEATH;
-        if (sprite == NORMAL_SPRITES[1] || sprite == FAST_SPRITES[0]) return SoundEffects.Effect.DOG_DEATH;
+        if (sprite == NORMAL_SPRITES[1]) return SoundEffects.Effect.GREEN_MONSTER_DEATH;
+        if (sprite == FAST_SPRITES[0]) return SoundEffects.Effect.DOG_DEATH;
         if (sprite == NORMAL_SPRITES[4]) return SoundEffects.Effect.GOBLIN_DEATH;
         return SoundEffects.Effect.ENEMY_DEATH;
     }

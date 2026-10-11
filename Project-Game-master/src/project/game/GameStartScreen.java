@@ -19,12 +19,11 @@ public final class GameStartScreen extends JPanel {
     private static final String[] HERO_NAMES = {"SWORDSMAN","IRON MAN","STRONG BOY"};
     private static final String[] HERO_ROLES = {"THE BLADE","THE ARSENAL","THE POWERHOUSE"};
     private static final String[] SKILLS = {"SWORD","LASER","AURAFARMING"};
-    private static final String[] HERO_DETAILS = {"Strike enemies up close.","Cut through with energy.","Surround yourself in power."};
     private static final MapOption[] MAPS = {
-        new MapOption("Enchanted Forest","/project/game/Map/forest.jpg","GREEN WILDS","Where the hunt begins."),
-        new MapOption("Desert","/project/game/Map/desert.jpg","GOLDEN SANDS","An endless sea of sand."),
-        new MapOption("Night","/project/game/Map/night.jpg","AFTER DARK","Step into the moonlight."),
-        new MapOption("Lava","/project/game/Map/lava.jpg","ASH & EMBER","Walk through the fire.")
+        new MapOption("Enchanted Forest","/project/game/Map/forest.jpg","GREEN WILDS"),
+        new MapOption("Desert","/project/game/Map/desert.jpg","GOLDEN SANDS"),
+        new MapOption("Night","/project/game/Map/night.jpg","AFTER DARK"),
+        new MapOption("Lava","/project/game/Map/lava.jpg","ASH & EMBER")
     };
     private final BiConsumer<Player.CharacterType,String> onGameStart;
     private final SpriteAnimation[] characterPreviews = new SpriteAnimation[CHARACTERS.length];
@@ -76,7 +75,9 @@ public final class GameStartScreen extends JPanel {
         }
         g.setColor(new Color(241,197,113,32)); g.drawRect(20,20,759,559);
         for(int x:new int[]{20,768}) for(int y:new int[]{20,568}) {
-            g.setColor(GOLD); g.fillRect(x,y,12,2); g.fillRect(x,y,2,12);
+            g.setColor(GOLD);
+            g.fillRect(x,y==20?y:y+10,12,2);
+            g.fillRect(x==20?x:x+10,y,2,12);
         }
     }
     private void drawStartPage(Graphics2D g) {
@@ -93,13 +94,13 @@ public final class GameStartScreen extends JPanel {
         centered(g,"W A S D / ARROWS TO MOVE     |     AUTO ATTACK",12,MUTED,400,535);
         centered(g,"ENTER TO BEGIN",11,GOLD,400,556);
     }
-    private void drawHeader(Graphics2D g,String title,String subtitle) {
+    private void drawHeader(Graphics2D g,String title) {
         text(g,"ISEKAI SURVIVORS",12,GOLD,48,49); rightText(g,page==Page.PLAYER?"01 / HERO":"02 / WORLD",12,MUTED,752,49);
-        text(g,title,34,WHITE,48,104); text(g,subtitle,13,MUTED,49,131);
+        text(g,title,34,WHITE,48,104);
         g.setColor(new Color(241,197,113,60)); g.fillRect(48,149,704,1);
     }
     private void drawPlayerPage(Graphics2D g) {
-        drawHeader(g,"CHOOSE YOUR HERO","Three heroes. Three powers. One chance to survive.");
+        drawHeader(g,"CHOOSE YOUR HERO");
         for(int i=0;i<CHARACTERS.length;i++) {
             Rectangle card=playerCard(i); boolean selected=selectedCharacter==i;
             drawCard(g,card,selected,hoveredIndex==i);
@@ -111,14 +112,13 @@ public final class GameStartScreen extends JPanel {
             hero(g,i,card.x+card.width/2,card.y+85,i==2?156:144);
             centered(g,"STARTING SKILL",10,MUTED,card.x+card.width/2,card.y+204);
             centered(g,SKILLS[i],17,GOLD,card.x+card.width/2,card.y+227);
-            centered(g,HERO_DETAILS[i],11,MUTED,card.x+card.width/2,card.y+247);
             if(selected) { g.setColor(GOLD); g.fillRect(card.x+1,card.y+card.height-21,card.width-2,20); }
             centered(g,selected?"SELECTED":"CLICK TO SELECT",10,selected?PANEL:MUTED,card.x+card.width/2,card.y+card.height-7);
         }
         drawFooter(g,"CHOOSE WORLD  >",HERO_NAMES[selectedCharacter]+" / "+SKILLS[selectedCharacter]);
     }
     private void drawMapPage(Graphics2D g) {
-        drawHeader(g,"CHOOSE YOUR WORLD","Every path leads to a new fight.");
+        drawHeader(g,"CHOOSE YOUR WORLD");
         for(int i=0;i<MAPS.length;i++) {
             Rectangle card=mapCard(i); boolean selected=selectedMap==i;
             drawCard(g,card,selected,hoveredIndex==i);
@@ -130,7 +130,6 @@ public final class GameStartScreen extends JPanel {
                 centered(g,"SELECTED",10,PANEL,card.x+card.width-58,card.y+30);
             }
             text(g,MAPS[i].name.toUpperCase(),18,WHITE,card.x+16,card.y+116);
-            text(g,MAPS[i].description,11,MUTED,card.x+16,card.y+137);
         }
         drawFooter(g,"START ADVENTURE  >",HERO_NAMES[selectedCharacter]+" / "+MAPS[selectedMap].name.toUpperCase());
     }
@@ -231,9 +230,9 @@ public final class GameStartScreen extends JPanel {
         catch(IOException e) { throw new IllegalStateException("Unable to load menu image: "+path,e); }
     }
     private static final class MapOption {
-        private final String name,resource,tagline,description;
-        private MapOption(String name,String resource,String tagline,String description) {
-            this.name=name; this.resource=resource; this.tagline=tagline; this.description=description;
+        private final String name,resource,tagline;
+        private MapOption(String name,String resource,String tagline) {
+            this.name=name; this.resource=resource; this.tagline=tagline;
         }
     }
 }

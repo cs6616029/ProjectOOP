@@ -79,6 +79,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private boolean gameWon;
     private boolean paused;
     private int pauseHoveredButton = -1;
+    private final AudioSettingsOverlay audioSettings = new AudioSettingsOverlay();
     private int bossesDefeated;
     private int score = 0;
 
@@ -101,6 +102,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         requestFocus();
         addKeyListener(this);
         addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                synchronized (VampireSurvivorsGame.this) { audioSettings.mouseReleased(); }
+            }
             @Override
             public void mousePressed(MouseEvent e) {
                 requestFocusInWindow();
@@ -130,14 +135,23 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         });
         MouseAdapter pauseHover = new MouseAdapter() {
             @Override
+            public void mouseDragged(MouseEvent event) {
+                synchronized (VampireSurvivorsGame.this) {
+                    if (paused && audioSettings.isOpen()) audioSettings.mouseDragged(event.getX(), SCREEN_WIDTH, SCREEN_HEIGHT);
+                }
+            }
+            @Override
             public void mouseMoved(MouseEvent event) {
                 synchronized (VampireSurvivorsGame.this) {
                     victoryHovered = gameWon && victoryMenuButtonBounds().contains(event.getPoint());
                     boolean overUpgrade = !paused && !gameOver && !gameWon && levelManager.handleMouseMove(event, SCREEN_WIDTH);
                     pauseHoveredButton = !paused ? -1 : resumeButtonBounds().contains(event.getPoint()) ? 0
                             : restartButtonBounds().contains(event.getPoint()) ? 1
-                            : mainMenuButtonBounds().contains(event.getPoint()) ? 2 : -1;
-                    setCursor(java.awt.Cursor.getPredefinedCursor(pauseHoveredButton >= 0 || overUpgrade || victoryHovered
+                            : mainMenuButtonBounds().contains(event.getPoint()) ? 2
+                            : PauseMenuOverlay.audioButtonBounds(SCREEN_WIDTH).contains(event.getPoint()) ? 3 : -1;
+                    boolean overPause = paused && (audioSettings.isOpen()
+                            ? audioSettings.isInteractive(event.getX(), event.getY(), SCREEN_WIDTH, SCREEN_HEIGHT) : pauseHoveredButton >= 0);
+                    setCursor(java.awt.Cursor.getPredefinedCursor(overPause || overUpgrade || victoryHovered
                             ? java.awt.Cursor.HAND_CURSOR : java.awt.Cursor.DEFAULT_CURSOR));
                 }
             }
@@ -158,6 +172,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private synchronized void initGame() {
+        audioSettings.close();
         paused = false;
         pauseHoveredButton = -1;
         setCursor(java.awt.Cursor.getDefaultCursor());
@@ -603,12 +618,20 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void drawPauseMenu(Graphics2D g) {
+        if (audioSettings.isOpen()) {
+            audioSettings.draw(g, SCREEN_WIDTH, SCREEN_HEIGHT);
+            return;
+        }
         PauseMenuOverlay.draw(g, SCREEN_WIDTH, SCREEN_HEIGHT, levelManager.getLevel(), elapsedSeconds, score,
                 resumeButtonBounds(), restartButtonBounds(), mainMenuButtonBounds(), pauseHoveredButton);
     }
 
     private void handlePauseClick(MouseEvent event) {
         if (event.getButton() != MouseEvent.BUTTON1) return;
+        if (audioSettings.isOpen()) {
+            audioSettings.mousePressed(event.getX(), event.getY(), SCREEN_WIDTH, SCREEN_HEIGHT);
+            return;
+        }
         if (resumeButtonBounds().contains(event.getPoint())) {
             setPaused(false);
             SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
@@ -617,6 +640,9 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
         } else if (mainMenuButtonBounds().contains(event.getPoint())) {
             returnToMenu();
+        } else if (PauseMenuOverlay.audioButtonBounds(SCREEN_WIDTH).contains(event.getPoint())) {
+            audioSettings.open();
+            SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
         }
     }
 
@@ -636,6 +662,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void setPaused(boolean paused) {
+        audioSettings.close();
         if (paused) mapMusic.pause(); else mapMusic.resume();
         this.paused = paused;
         pauseHoveredButton = -1;
@@ -683,6 +710,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     @Override
     public synchronized void keyPressed(KeyEvent e) {
+        if (paused && audioSettings.isOpen()) {
+            audioSettings.keyPressed(e.getKeyCode());
+            return;
+        }
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !gameOver && !gameWon) {
             setPaused(!paused);
             SoundEffects.play(SoundEffects.Effect.MENU_CLICK);

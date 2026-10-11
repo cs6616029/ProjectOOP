@@ -29,6 +29,7 @@ public class SpearWeapon extends Weapon {
         animationTime = time;
         if (swinging && time - attackStart >= FrostHammerAnimation.IMPACT_MILLIS && !impacted) {
             impacted = true;
+            SoundEffects.play(SoundEffects.Effect.FROST_HAMMER);
             effects.add(VisualEffect.frostImpact(impactX, impactY, blastRadius));
             for (Enemy enemy : enemies) {
                 if (enemy.hp > 0 && Math.hypot(enemy.x - impactX, enemy.y - impactY)

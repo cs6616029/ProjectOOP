@@ -35,6 +35,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Aura cooldown checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Golden sword checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.SoundFeedbackTest
 if ($LASTEXITCODE -ne 0) { throw 'Sound feedback checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.AudioSettingsTest
+if ($LASTEXITCODE -ne 0) { throw 'Audio settings checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.MapMusicTest
 if ($LASTEXITCODE -ne 0) { throw 'Map music checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.EnemyDeathSoundTest

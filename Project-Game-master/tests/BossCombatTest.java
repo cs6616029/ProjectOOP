@@ -219,7 +219,7 @@ public final class BossCombatTest {
         check(bolt.update(target, 4500) == 0 && bolt.isFinished(), "Missed projectiles expire");
 
         for (Player.CharacterType character : Player.CharacterType.values()) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame(character, "/project/game/Map/forest.jpg");
+            ISEKAISurvivors game = new ISEKAISurvivors(character, "/project/game/Map/forest.jpg");
             List<Weapon> weapons = (List<Weapon>) get(game, "weapons");
             int swordLevel = weapons.stream().filter(w -> w instanceof SwordWeapon).findFirst().get().getLevel();
             int laserLevel = weapons.stream().filter(w -> w instanceof LaserWeapon).findFirst().get().getLevel();

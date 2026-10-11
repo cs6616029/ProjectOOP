@@ -99,7 +99,7 @@ public class TornadoTest {
         check(boss.isAirborne() && boss.airborneHeight() == 28, "Boss lift uses a smaller visible height");
         List<BossAttack> attacks = new ArrayList<>(); boss.updateBossSkill(p, attacks, 10375);
         check(attacks.isEmpty(), "Lift interrupts boss casts");
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         List<Weapon> weapons = (List<Weapon>) get(game, "weapons");
         check(weapons.stream().anyMatch(weapon -> weapon instanceof TornadoWeapon && weapon.getLevel() == 0), "New skill is registered for upgrades");
         TornadoWeapon offered = new TornadoWeapon(0);

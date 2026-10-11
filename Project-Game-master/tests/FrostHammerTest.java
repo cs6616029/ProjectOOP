@@ -37,7 +37,7 @@ public class FrostHammerTest {
         BufferedImage sheet = ImageIO.read(FrostHammerTest.class.getResource("/project/game/effects/frost-hammer.png"));
         for (int direction = 0; direction < 8; direction++) {
             double angle = direction * Math.PI / 4;
-            SpearWeapon hammer = new SpearWeapon(1);
+            FrostHammerWeapon hammer = new FrostHammerWeapon(1);
             Enemy target = enemy(120 * Math.cos(angle), 120 * Math.sin(angle), EnemyType.NORMAL);
             Enemy outside = enemy(-120 * Math.cos(angle), -120 * Math.sin(angle), EnemyType.NORMAL);
             List<VisualEffect> effects = new ArrayList<>();
@@ -77,7 +77,7 @@ public class FrostHammerTest {
             g.dispose(); check(same(actual, expected), "All eleven ice frames play without blank atlas cells"); effect.update();
         }
         check(effect.isFinished(), "Ice explosion ends without looping");
-        SpearWeapon largeHammer = new SpearWeapon(5);
+        FrostHammerWeapon largeHammer = new FrostHammerWeapon(5);
         Enemy center = enemy(220, 0, EnemyType.TANK);
         Enemy expandedEdge = enemy(220, 140, EnemyType.NORMAL);
         Enemy outsideBlast = enemy(220, 190, EnemyType.NORMAL);
@@ -90,7 +90,7 @@ public class FrostHammerTest {
         check(outsideBlast.hp == 1000 && !outsideBlast.isFrozen(), "Larger blast still respects its outer boundary");
         for (BossSkill.Kind kind : BossSkill.Kind.values()) {
             Enemy boss = new Enemy(120, 0, EnemyType.BOSS, 1, kind); boss.hp = 1000;
-            SpearWeapon hammer = new SpearWeapon(1);
+            FrostHammerWeapon hammer = new FrostHammerWeapon(1);
             List<VisualEffect> effects = new ArrayList<>();
             hammer.update(p, List.of(boss), effects, 10000);
             hammer.update(p, List.of(boss), effects, 10480);
@@ -129,7 +129,7 @@ public class FrostHammerTest {
         check(shots.isEmpty(), "Frozen bat cannot shoot");
         Enemy dead = enemy(80, 0, EnemyType.NORMAL); dead.hp = 0; dead.applyFrostHit(10000);
         check(!dead.isFrozen(), "Dead enemies are not frozen");
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         Player gp = (Player) get(game, "player");
         List<Enemy> enemies = (List<Enemy>) get(game, "enemies"); enemies.clear();
         ((List<Weapon>) get(game, "weapons")).clear();

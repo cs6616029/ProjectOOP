@@ -25,7 +25,7 @@ public class BossVictoryTest {
         field.set(target, value);
     }
 
-    private static void click(VampireSurvivorsGame game, int x, int y) {
+    private static void click(ISEKAISurvivors game, int x, int y) {
         MouseEvent event = new MouseEvent(game, MouseEvent.MOUSE_PRESSED, 0, 0,
                 x, y, 1, false, MouseEvent.BUTTON1);
         for (var listener : game.getMouseListeners()) listener.mousePressed(event);
@@ -33,14 +33,14 @@ public class BossVictoryTest {
 
     public static void main(String[] args) throws Exception {
         boolean[] returnedToMenu = {false};
-        VampireSurvivorsGame game = new VampireSurvivorsGame(
+        ISEKAISurvivors game = new ISEKAISurvivors(
                 Player.CharacterType.SURVIVOR, "/project/game/Map/forest.jpg",
                 () -> returnedToMenu[0] = true);
         @SuppressWarnings("unchecked")
         List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
-        Method spawnBoss = VampireSurvivorsGame.class.getDeclaredMethod("spawnBossAroundPlayer", long.class);
+        Method spawnBoss = ISEKAISurvivors.class.getDeclaredMethod("spawnBossAroundPlayer", long.class);
         spawnBoss.setAccessible(true);
-        Method updateGame = VampireSurvivorsGame.class.getDeclaredMethod("updateGame");
+        Method updateGame = ISEKAISurvivors.class.getDeclaredMethod("updateGame");
         updateGame.setAccessible(true);
         BossSkill.Kind[] sequence = {
             BossSkill.Kind.CHARGER,

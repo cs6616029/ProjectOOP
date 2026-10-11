@@ -63,7 +63,7 @@ public class MapMusicTest {
         check(!lava.running && forest.running, "Changing away from Lava stops its song");
         new MapMusic("/project/game/Map/unknown.jpg").start();
         check(!forest.running && !desert.running && !night.running && !lava.running, "Unknown maps do not play unrelated music");
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         MapMusic gameMusic = (MapMusic) field(game.getClass(), "mapMusic").get(game); gameMusic.start();
         LevelManager manager = (LevelManager) field(game.getClass(), "levelManager").get(game);
         Player player = (Player) field(game.getClass(), "player").get(game);

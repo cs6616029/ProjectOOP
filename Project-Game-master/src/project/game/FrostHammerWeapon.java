@@ -5,7 +5,7 @@ import java.awt.RenderingHints;
 import java.util.List;
 
 /** Keeps the existing upgrade slot for the Frost Hammer replacement. */
-public class SpearWeapon extends Weapon {
+public class FrostHammerWeapon extends Weapon {
     private static final int BASE_RANGE = 138, RANGE_PER_LEVEL = 28;
     private static final int BASE_RADIUS = 55, RADIUS_PER_LEVEL = 20;
     private long lastAttackTime, attackStart, animationTime;
@@ -13,7 +13,7 @@ public class SpearWeapon extends Weapon {
     private double originX, originY, angle, impactX, impactY;
     private int swingWidth, blastRadius, swingDamage;
 
-    public SpearWeapon(int level) {
+    public FrostHammerWeapon(int level) {
         super("Frost Hammer", "Slams an icy hammer and freezes enemies; bosses require two hits", level, 32, 10);
     }
 

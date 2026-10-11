@@ -6,7 +6,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ShieldWeapon extends Weapon {
+public class TenRingWeapon extends Weapon {
     private static final GifAnimation RING_ANIMATION = GifAnimation.load(
             "/project/game/weapons/TenRing/tenring_transparent.gif").trimTransparentMargins();
     private long animationStartTime = -1;
@@ -18,7 +18,7 @@ public class ShieldWeapon extends Weapon {
     private static final long BOSS_EXPLOSION_INTERVAL = 750;
     private final Map<Enemy, Long> lastBossExplosions = new IdentityHashMap<>();
 
-    public ShieldWeapon(int level) {
+    public TenRingWeapon(int level) {
         super("Ten Ring", "Summons fiery rings orbiting around you. Higher levels add more rings.", level, 18, 6);
     }
 

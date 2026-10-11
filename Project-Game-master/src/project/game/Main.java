@@ -19,7 +19,7 @@ public class Main {
 
     private static void showStartScreen(JFrame frame) {
         frame.setContentPane(new GameStartScreen((characterType, mapResource) -> {
-            VampireSurvivorsGame game = new VampireSurvivorsGame(
+            ISEKAISurvivors game = new ISEKAISurvivors(
                     characterType, mapResource, () -> showStartScreen(frame));
             frame.setContentPane(game);
             frame.revalidate();

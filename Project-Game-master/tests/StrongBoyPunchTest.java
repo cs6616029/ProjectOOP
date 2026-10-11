@@ -62,7 +62,7 @@ public class StrongBoyPunchTest {
         p.hp = 0; punch.update(p, List.of(target), 10660);
         check(target.hp == 982 && !(boolean) get(punch, "attacking"), "Dead player cannot continue punching");
         for (Player.CharacterType character : Player.CharacterType.values()) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame(character, "/project/game/Map/forest.jpg");
+            ISEKAISurvivors game = new ISEKAISurvivors(character, "/project/game/Map/forest.jpg");
             Object innate = get(game, "strongBoyPunch");
             check((innate != null) == (character == Player.CharacterType.STRONG_BOY), "Punch belongs only to Strong Boy");
             List<Weapon> weapons = (List<Weapon>) get(game, "weapons");

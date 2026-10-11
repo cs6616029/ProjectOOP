@@ -29,7 +29,7 @@ public class BossDeathEffectTest {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         for (BossSkill.Kind kind : BossSkill.Kind.values()) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame();
+            ISEKAISurvivors game = new ISEKAISurvivors();
             Player player = (Player) get(game, "player");
             ((List<Weapon>) get(game, "weapons")).clear();
             List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
@@ -72,7 +72,7 @@ public class BossDeathEffectTest {
         check(Arrays.stream(render(effect)).allMatch(pixel -> pixel == 0), "Expired effect draws nothing");
         BufferedImage sheet = ImageIO.read(BossDeathEffectTest.class.getResource("/project/game/effects/enemy-death.png"));
         for (EnemyType type : new EnemyType[] {EnemyType.NORMAL, EnemyType.FAST, EnemyType.TANK}) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame();
+            ISEKAISurvivors game = new ISEKAISurvivors();
             ((List<Weapon>) get(game, "weapons")).clear();
             List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
             Enemy enemy = new Enemy(300, 0, type, 1);

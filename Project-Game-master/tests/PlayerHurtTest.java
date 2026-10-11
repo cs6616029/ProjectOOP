@@ -40,7 +40,7 @@ public class PlayerHurtTest {
             }
             check(changed > 100, "Visible red tint: " + type);
         }
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         Player player = (Player) get(game, "player");
         Field clock = game.getClass().getDeclaredField("gameTimeMillis");
         clock.setAccessible(true);

@@ -48,7 +48,7 @@ public class LevelManager {
     private boolean canUpgrade(Object upgrade) {
         if (upgrade instanceof Weapon && ((Weapon) upgrade).getLevel() == 0 && attackSkillsFull()) return false;
         if (upgrade instanceof Weapon && primaryWeapon != null && upgrade != primaryWeapon
-                && (upgrade instanceof SwordWeapon || upgrade instanceof GarlicWeapon || upgrade instanceof LaserWeapon)) {
+                && (upgrade instanceof SwordWeapon || upgrade instanceof AurafarmingWeapon || upgrade instanceof LaserWeapon)) {
             return false;
         }
         return upgrade instanceof Weapon ? ((Weapon) upgrade).getLevel() < 5

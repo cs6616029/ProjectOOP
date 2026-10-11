@@ -41,15 +41,15 @@ public final class AudioSettingsTest {
             });
         }
     }
-    private static void click(VampireSurvivorsGame game, int x, int y) {
+    private static void click(ISEKAISurvivors game, int x, int y) {
         var event = new MouseEvent(game, MouseEvent.MOUSE_PRESSED, 0, 0, x, y, 1, false, MouseEvent.BUTTON1);
         for (var listener : game.getMouseListeners()) listener.mousePressed(event);
     }
-    private static void drag(VampireSurvivorsGame game, int x, int y) {
+    private static void drag(ISEKAISurvivors game, int x, int y) {
         var event = new MouseEvent(game, MouseEvent.MOUSE_DRAGGED, 0, MouseEvent.BUTTON1_DOWN_MASK, x, y, 0, false);
         for (var listener : game.getMouseMotionListeners()) listener.mouseDragged(event);
     }
-    private static void key(VampireSurvivorsGame game, int code) {
+    private static void key(ISEKAISurvivors game, int code) {
         game.keyPressed(new KeyEvent(game, KeyEvent.KEY_PRESSED, 0, 0, code, KeyEvent.CHAR_UNDEFINED));
     }
     @SuppressWarnings("unchecked")
@@ -81,7 +81,7 @@ public final class AudioSettingsTest {
         check(states.get(SoundEffects.Effect.MUSIC_LAVA).running && states.get(SoundEffects.Effect.MUSIC_LAVA).resets == 1,
                 "Unmuting music resumes without resetting position");
         SoundEffects.setSoundVolume(1); SoundEffects.setMusicVolume(.25);
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         key(game, KeyEvent.VK_ESCAPE); click(game, 450, 513);
         AudioSettingsOverlay settings = (AudioSettingsOverlay) get(game, "audioSettings");
         check(settings.isOpen() && (boolean) get(game, "paused"), "Pause audio button opens settings without resuming");
@@ -127,7 +127,7 @@ public final class AudioSettingsTest {
         click(game, 450, 369);
         check(!(boolean) get(game, "paused") && SoundEffects.getSoundVolume() == .7 && SoundEffects.getMusicVolume() == .4,
                 "Restart preserves both volume settings");
-        new VampireSurvivorsGame(Player.CharacterType.SURVIVOR, "/project/game/Map/lava.jpg");
+        new ISEKAISurvivors(Player.CharacterType.SURVIVOR, "/project/game/Map/lava.jpg");
         check(SoundEffects.getSoundVolume() == .7 && SoundEffects.getMusicVolume() == .4, "Changing map preserves settings");
         SoundEffects.setSoundVolume(1); SoundEffects.setMusicVolume(.25);
         System.out.println("PASS: separate gain for all effects and four songs, mute, resume, pause settings, dragging, keyboard, back, restart and map persistence");

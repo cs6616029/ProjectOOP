@@ -19,6 +19,11 @@ public final class HealthPickupTest {
     public static void main(String[] args) throws Exception {
         BufferedImage sheet = ImageIO.read(HealthPickupTest.class.getResource("/project/game/effects/boss-health.png"));
         check(sheet.getWidth() == 23 * 128 && sheet.getHeight() == 128, "Supplied heart atlas has 23 frames");
+        BufferedImage shadowImage = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
+        var shadowGraphics = shadowImage.createGraphics();
+        new HealthPickup(0, 0, 10000).draw(shadowGraphics, -64, -64, 10300); shadowGraphics.dispose();
+        check((shadowImage.getRGB(64, 84) >>> 24) >= 70 && (shadowImage.getRGB(64, 84) & 0xffffff) == 0,
+                "Dropped heart has a visible ground shadow below it");
         Player player = new Player(0, 0); player.hp = 20;
         HealthPickup heart = new HealthPickup(200, 0, 10000);
         check(!heart.update(player, 10100) && player.hp == 20, "Distant heart cannot heal");
@@ -45,18 +50,22 @@ public final class HealthPickupTest {
         HealthPickup dead = new HealthPickup(200, 0, 20000);
         player.hp = 0; dead.update(player, 21000); check(player.hp == 0, "Heart does not revive a dead player");
         for (BossSkill.Kind kind : BossSkill.Kind.values()) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame();
+            ISEKAISurvivors game = new ISEKAISurvivors();
             List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
             ((List<Weapon>) get(game, "weapons")).clear(); enemies.clear();
             Player gp = (Player) get(game, "player"); gp.hp = 20;
             Enemy boss = new Enemy(gp.x + 400, gp.y, EnemyType.BOSS, 1, kind); boss.hp = 0; enemies.add(boss);
             call(game, "updateGame");
             List<HealthPickup> hearts = (List<HealthPickup>) get(game, "healthPickups");
-            check(hearts.size() == 1 && hearts.get(0).x == boss.x && hearts.get(0).y == boss.y,
-                    "Each boss drops one heart at its death position");
-            check(((List<Gem>) get(game, "gems")).size() == 1, "Boss still drops EXP separately");
+            check(hearts.size() == 1 && hearts.get(0).x == boss.x - 32 && hearts.get(0).y == boss.y,
+                    "Each boss drops one heart beside its death position");
+            List<Gem> gems = (List<Gem>) get(game, "gems");
+            check(gems.size() == 1 && gems.get(0).isBossGem && gems.get(0).xpValue == 50,
+                    "Each boss also drops a red 50 EXP gem");
+            check(gems.get(0).x == boss.x + 32 && gems.get(0).y == boss.y
+                    && gems.get(0).x - hearts.get(0).x == 64, "Heart and red gem stay separated and visible");
             call(game, "updateGame"); check(hearts.size() == 1, "Dead boss cannot duplicate heart drops");
-            ((List<Gem>) get(game, "gems")).clear(); gp.x = boss.x; gp.y = boss.y;
+            ((List<Gem>) get(game, "gems")).clear(); gp.x = hearts.get(0).x; gp.y = hearts.get(0).y;
             call(game, "updateGame"); check(gp.hp == 50, "Game collects boss heart and heals player");
             call(game, "initGame"); check(hearts.isEmpty(), "Restart removes old hearts");
             enemies = (List<Enemy>) get(game, "enemies"); enemies.clear();

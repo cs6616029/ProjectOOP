@@ -26,7 +26,7 @@ public class LevelUpOptionsTest {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         for (Player.CharacterType character : Player.CharacterType.values()) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame(character, "/project/game/Map/forest.jpg");
+            ISEKAISurvivors game = new ISEKAISurvivors(character, "/project/game/Map/forest.jpg");
             LevelManager manager = (LevelManager) get(game, "levelManager");
             List<Weapon> weapons = (List<Weapon>) get(game, "weapons");
             Weapon primary = weapons.get(switch (character) {
@@ -40,7 +40,7 @@ public class LevelUpOptionsTest {
                 check(offers.size() == 5 && offers.get(0) == primary, "Primary slot: " + character);
                 check(offers.stream().distinct().count() == 5, "Options must be unique");
                 check(offers.stream().noneMatch(item -> item != primary &&
-                        (item instanceof SwordWeapon || item instanceof GarlicWeapon || item instanceof LaserWeapon)),
+                        (item instanceof SwordWeapon || item instanceof AurafarmingWeapon || item instanceof LaserWeapon)),
                         "Other characters' signature skills never appear: " + character);
                 BufferedImage image = new BufferedImage(900, 675, BufferedImage.TYPE_INT_ARGB);
                 var graphics = image.createGraphics();
@@ -59,11 +59,11 @@ public class LevelUpOptionsTest {
                 generate.invoke(manager, weapons, List.of());
                 List<?> offers = (List<?>) get(manager, "offeredUpgrades");
                 check(offers.stream().allMatch(item -> item == primary ||
-                        !(item instanceof SwordWeapon || item instanceof GarlicWeapon || item instanceof LaserWeapon)),
+                        !(item instanceof SwordWeapon || item instanceof AurafarmingWeapon || item instanceof LaserWeapon)),
                         "Signature exclusion survives repeated random rolls");
             }
             Weapon foreign = weapons.stream().filter(w -> w != primary &&
-                    (w instanceof SwordWeapon || w instanceof GarlicWeapon || w instanceof LaserWeapon)).findFirst().orElseThrow();
+                    (w instanceof SwordWeapon || w instanceof AurafarmingWeapon || w instanceof LaserWeapon)).findFirst().orElseThrow();
             List<Object> staleOffers = (List<Object>) get(manager, "offeredUpgrades");
             staleOffers.clear(); staleOffers.add(foreign);
             Method select = LevelManager.class.getDeclaredMethod("selectUpgrade", int.class, Player.class);
@@ -135,7 +135,7 @@ public class LevelUpOptionsTest {
         for (int code : new int[]{KeyEvent.VK_4, KeyEvent.VK_5, KeyEvent.VK_NUMPAD4, KeyEvent.VK_NUMPAD5}) {
             LevelManager manager = new LevelManager();
             List<Weapon> weapons = List.of(new SwordWeapon(0), new GunWeapon(0), new LaserWeapon(0),
-                    new FireStaffWeapon(0), new GarlicWeapon(0));
+                    new FireStaffWeapon(0), new AurafarmingWeapon(0));
             manager.gainXP(10, null, weapons, new ArrayList<>());
             int index = code >= KeyEvent.VK_NUMPAD1 ? code - KeyEvent.VK_NUMPAD1 : code - KeyEvent.VK_1;
             Weapon selected = (Weapon) ((List<?>) get(manager, "offeredUpgrades")).get(index);
@@ -145,7 +145,7 @@ public class LevelUpOptionsTest {
         LevelManager manager = new LevelManager();
         Weapon primary = new SwordWeapon(5);
         List<Weapon> weapons = List.of(primary, new GunWeapon(0), new LaserWeapon(0), new FireStaffWeapon(0),
-                new GarlicWeapon(0), new SpearWeapon(0), new HolyWaterWeapon(0));
+                new AurafarmingWeapon(0), new FrostHammerWeapon(0), new SwordOfJusticeWeapon(0));
         manager.setPrimaryWeapon(primary);
         manager.gainXP(10, null, weapons, new ArrayList<>());
         check(((List<?>) get(manager, "offeredUpgrades")).get(0) == primary, "Maxed primary stays in reserved slot");

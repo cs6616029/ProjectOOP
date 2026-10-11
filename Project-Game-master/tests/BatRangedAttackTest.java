@@ -102,7 +102,7 @@ public class BatRangedAttackTest {
         other.updateRangedAttack(player, shots, 10000);
         check(shots.size() == 2, "Other monsters do not gain bat projectiles");
 
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         Player gamePlayer = (Player) get(game, "player");
         ((List<Weapon>) get(game, "weapons")).clear();
         List<Enemy> enemies = (List<Enemy>) get(game, "enemies");

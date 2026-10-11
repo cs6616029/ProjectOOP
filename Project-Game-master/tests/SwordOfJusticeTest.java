@@ -12,8 +12,8 @@ public class SwordOfJusticeTest {
     private static void check(boolean value, String message) {
         if (!value) throw new AssertionError(message);
     }
-    private static List<?> strikes(HolyWaterWeapon skill) throws Exception {
-        Field field = HolyWaterWeapon.class.getDeclaredField("strikes");
+    private static List<?> strikes(SwordOfJusticeWeapon skill) throws Exception {
+        Field field = SwordOfJusticeWeapon.class.getDeclaredField("strikes");
         field.setAccessible(true);
         return (List<?>) field.get(skill);
     }
@@ -22,7 +22,7 @@ public class SwordOfJusticeTest {
         enemy.hp = 1000;
         return enemy;
     }
-    private static BufferedImage draw(HolyWaterWeapon skill, Player player) {
+    private static BufferedImage draw(SwordOfJusticeWeapon skill, Player player) {
         BufferedImage image = new BufferedImage(400, 500, BufferedImage.TYPE_INT_ARGB);
         var graphics = image.createGraphics();
         skill.draw(graphics, player, -20, -350);
@@ -31,7 +31,7 @@ public class SwordOfJusticeTest {
     }
     public static void main(String[] args) throws Exception {
         Player player = new Player(0, 0);
-        HolyWaterWeapon skill = new HolyWaterWeapon(1);
+        SwordOfJusticeWeapon skill = new SwordOfJusticeWeapon(1);
         check(skill.getName().equals("Sword of Justice"), "New skill name reaches HUD and upgrades");
         skill.update(player, List.of(), new ArrayList<>(), 10000);
         check(strikes(skill).isEmpty(), "No random ground pools or casts without enemies");
@@ -77,7 +77,7 @@ public class SwordOfJusticeTest {
         }
         check(nova.isFinished(), "All ten Nova frames complete once");
         for (int level = 1; level <= 5; level++) {
-            skill = new HolyWaterWeapon(level);
+            skill = new SwordOfJusticeWeapon(level);
             Enemy first = enemy(80), second = enemy(350), far = enemy(600), dead = enemy(10);
             dead.hp = 0;
             List<Enemy> enemies = List.of(far, second, dead, first);
@@ -94,7 +94,7 @@ public class SwordOfJusticeTest {
             skill.update(player, enemies, new ArrayList<>(), 12500);
             check(!strikes(skill).isEmpty(), "Next cast on cooldown");
         }
-        skill = new HolyWaterWeapon(1);
+        skill = new SwordOfJusticeWeapon(1);
         target = enemy(180);
         skill.update(player, List.of(target), new ArrayList<>(), 10000);
         skill.update(player, List.of(target), new ArrayList<>(), 10064);
@@ -105,7 +105,7 @@ public class SwordOfJusticeTest {
         target.x = 400;
         skill.update(player, List.of(target), new ArrayList<>(), 10320);
         check(target.hp == 1000, "Moving away dodges the locked strike");
-        skill = new HolyWaterWeapon(1);
+        skill = new SwordOfJusticeWeapon(1);
         target = enemy(180);
         Enemy nearby = enemy(230);
         skill.update(player, List.of(target, nearby), new ArrayList<>(), 10000);

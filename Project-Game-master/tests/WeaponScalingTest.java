@@ -23,13 +23,13 @@ public class WeaponScalingTest {
     private static Weapon weapon(int kind, int level) {
         return switch (kind) {
             case 0 -> new SwordWeapon(level);
-            case 1 -> new GarlicWeapon(level);
+            case 1 -> new AurafarmingWeapon(level);
             case 2 -> new LaserWeapon(level);
             case 3 -> new GunWeapon(level);
             case 4 -> new FireStaffWeapon(level);
-            case 5 -> new SpearWeapon(level);
-            case 6 -> new HolyWaterWeapon(level);
-            default -> new ShieldWeapon(level);
+            case 5 -> new FrostHammerWeapon(level);
+            case 6 -> new SwordOfJusticeWeapon(level);
+            default -> new TenRingWeapon(level);
         };
     }
     public static void main(String[] args) throws Exception {

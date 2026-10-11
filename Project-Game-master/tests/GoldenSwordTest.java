@@ -92,7 +92,7 @@ public class GoldenSwordTest {
             check(!(boolean) get(sword, "isAttacking"), "Golden animation completes without looping");
         }
         for (Player.CharacterType character : Player.CharacterType.values()) {
-            VampireSurvivorsGame game = new VampireSurvivorsGame(character, "/project/game/Map/forest.jpg");
+            ISEKAISurvivors game = new ISEKAISurvivors(character, "/project/game/Map/forest.jpg");
             List<Weapon> weapons = (List<Weapon>) get(game, "weapons");
             weapons.clear(); SwordWeapon main = new SwordWeapon(5);
             weapons.add(main);

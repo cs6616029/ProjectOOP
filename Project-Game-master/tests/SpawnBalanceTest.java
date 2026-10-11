@@ -46,7 +46,7 @@ public class SpawnBalanceTest {
         check(SpawnBalance.batchSize(600, true) == 1
                 && SpawnBalance.intervalMillis(600, 20, true) > SpawnBalance.intervalMillis(600, 20, false),
                 "Boss fights reduce ordinary spawn pressure");
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
         for (int i = 0; i < 89; i++) enemies.add(new Enemy(800, 0, EnemyType.NORMAL, 1));
         set(game, "elapsedSeconds", 300L);

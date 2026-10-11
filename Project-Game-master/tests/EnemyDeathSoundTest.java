@@ -69,7 +69,7 @@ public class EnemyDeathSoundTest {
                 default -> SoundEffects.Effect.BOSS_DEATH;
             });
         }
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         var update = game.getClass().getDeclaredMethod("updateGame"); update.setAccessible(true);
         var reset = game.getClass().getDeclaredMethod("initGame"); reset.setAccessible(true);
         for (int index = 0; index < fixtures.size(); index++) {

@@ -81,7 +81,7 @@ public final class GameRegressionTest {
         }
         for (int row = 0; row < 5; row++) {
             manager = new LevelManager();
-            List<Weapon> weapons = Arrays.asList(new SwordWeapon(0), new GarlicWeapon(0), new GunWeapon(0),
+            List<Weapon> weapons = Arrays.asList(new SwordWeapon(0), new AurafarmingWeapon(0), new GunWeapon(0),
                     new LaserWeapon(0), new FireStaffWeapon(0));
             manager.gainXP(10, null, weapons, Collections.emptyList());
             Weapon selected = (Weapon) ((List<?>) get(manager, "offeredUpgrades")).get(row);
@@ -114,7 +114,7 @@ public final class GameRegressionTest {
         for (int i = 0; i < 15; i++) gun.update(player, Arrays.asList(dead, alive), effects, 10000 + i * 16);
         check(alive.hp < hp && dead.hp == 0, "Bullets pass through dead enemies");
 
-        GarlicWeapon garlic = new GarlicWeapon(1);
+        AurafarmingWeapon garlic = new AurafarmingWeapon(1);
         Enemy edge = new Enemy(91, 0, EnemyType.NORMAL, 1);
         Enemy outside = new Enemy(92, 0, EnemyType.NORMAL, 1);
         hp = outside.hp;
@@ -145,7 +145,7 @@ public final class GameRegressionTest {
                     "Aura uses supplied frame, correct scale and looping at frame " + frameIndex);
         }
 
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         player = (Player) get(game, "player");
         ((List<Weapon>) get(game, "weapons")).clear();
         player.hp = 1;
@@ -176,9 +176,9 @@ public final class GameRegressionTest {
         game.keyPressed(key(game, KeyEvent.VK_1));
         call(game, "initGame");
 
-        HolyWaterWeapon water = null;
+        SwordOfJusticeWeapon water = null;
         for (Weapon item : (List<Weapon>) get(game, "weapons")) {
-            if (item instanceof HolyWaterWeapon) water = (HolyWaterWeapon) item;
+            if (item instanceof SwordOfJusticeWeapon) water = (SwordOfJusticeWeapon) item;
         }
         water.levelUp();
         Enemy justiceTarget = new Enemy(80, 0, EnemyType.NORMAL, 1);
@@ -215,7 +215,7 @@ public final class GameRegressionTest {
                 "Keyboard resume also excludes paused time");
 
         // Run frame rendering concurrently with restart input under the same game lock.
-        final VampireSurvivorsGame sharedGame = game;
+        final ISEKAISurvivors sharedGame = game;
         AtomicReference<Throwable> failure = new AtomicReference<>();
         Thread frames = new Thread(() -> {
             try {
@@ -240,7 +240,7 @@ public final class GameRegressionTest {
 
         for (Player.CharacterType character : Player.CharacterType.values()) {
             for (String map : new String[]{"forest", "desert", "night", "lava"}) {
-                game = new VampireSurvivorsGame(character, "/project/game/Map/" + map + ".jpg");
+                game = new ISEKAISurvivors(character, "/project/game/Map/" + map + ".jpg");
                 call(game, "updateGame");
                 call(game, "renderToBuffer");
                 check(get(game, "dbImage") instanceof BufferedImage, "Render " + character + "/" + map);

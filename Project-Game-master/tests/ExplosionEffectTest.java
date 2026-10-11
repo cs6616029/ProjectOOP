@@ -80,7 +80,7 @@ public class ExplosionEffectTest {
         check(fire.update(player, 1900, effects) == 0 && effects.isEmpty(), "Dodged fire does not explode on player");
         player.x = 0;
         player.y = 0;
-        ShieldWeapon ring = new ShieldWeapon(1);
+        TenRingWeapon ring = new TenRingWeapon(1);
         Enemy first = new Enemy(80, 0, EnemyType.NORMAL, 1);
         Enemy second = new Enemy(83, 0, EnemyType.NORMAL, 1);
         Enemy dead = new Enemy(80, 0, EnemyType.NORMAL, 1);
@@ -101,7 +101,7 @@ public class ExplosionEffectTest {
         check(effects.isEmpty(), "Dead enemies do not trigger ring explosions");
         ring.update(player, List.of(new Enemy(400, 0, EnemyType.NORMAL, 1)), effects, 10500);
         check(effects.isEmpty(), "Missed rings do not explode");
-        ring = new ShieldWeapon(2);
+        ring = new TenRingWeapon(2);
         first = new Enemy(80, 0, EnemyType.NORMAL, 1);
         second = new Enemy(-80, 0, EnemyType.NORMAL, 1);
         first.hp = second.hp = 1000;
@@ -111,13 +111,13 @@ public class ExplosionEffectTest {
         check(effects.size() == 2 && second.hp == 976 && first.hp == 976,
                 "Second ring immediately hits and explodes while first ring is on cooldown");
         effects.clear();
-        ring = new ShieldWeapon(1);
+        ring = new TenRingWeapon(1);
         first = new Enemy(125, 0, EnemyType.NORMAL, 1);
         first.hp = 1000;
         ring.update(player, List.of(first), effects, 30000);
         check(effects.size() == 1 && first.hp == 982, "Visible outer edge of ring triggers contact");
         effects.clear();
-        ring = new ShieldWeapon(5);
+        ring = new TenRingWeapon(5);
         first = new Enemy(0, 0, EnemyType.TANK, 1);
         first.size = 1000;
         first.hp = 1;
@@ -141,7 +141,7 @@ public class ExplosionEffectTest {
         verifyLaserAnimation(effects.get(0));
         System.out.println("PASS: explosion sprite frames, fireball impact, dragon impact, one-shot playback and dodging");
         effects.clear();
-        ring = new ShieldWeapon(5);
+        ring = new TenRingWeapon(5);
         Enemy boss = new Enemy(0, 0, EnemyType.BOSS, 1);
         boss.hp = 10000;
         ring.update(player, List.of(boss), effects, 60000);
@@ -158,7 +158,7 @@ public class ExplosionEffectTest {
                 "Boss gets only one new explosion after visual cooldown");
         verifyAnimation(effects.get(1));
         effects.clear();
-        GarlicWeapon aura = new GarlicWeapon(1);
+        AurafarmingWeapon aura = new AurafarmingWeapon(1);
         first = new Enemy(40, 0, EnemyType.NORMAL, 1);
         second = new Enemy(0, 40, EnemyType.NORMAL, 1);
         missed = new Enemy(400, 0, EnemyType.NORMAL, 1);

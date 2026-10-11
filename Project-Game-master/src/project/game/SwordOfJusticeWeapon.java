@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /** Retains the existing weapon slot while replacing the pool with a falling holy sword. */
-public class HolyWaterWeapon extends Weapon {
+public class SwordOfJusticeWeapon extends Weapon {
     private static final long COOLDOWN = 2500;
     private static final int FRAME_MILLIS = 64;
     private static final int IMPACT_MILLIS = 5 * FRAME_MILLIS;
@@ -21,7 +21,7 @@ public class HolyWaterWeapon extends Weapon {
         static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/sword-of-justice.png", 13);
     }
 
-    public HolyWaterWeapon(int level) {
+    public SwordOfJusticeWeapon(int level) {
         super("Sword of Justice", "Summons holy swords above enemies that plunge down and strike once", level, 12, 4);
     }
 

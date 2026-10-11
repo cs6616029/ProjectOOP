@@ -18,7 +18,7 @@ public class ContactDamageTest {
     public static void main(String[] args) throws Exception {
         for (Player.CharacterType character : Player.CharacterType.values()) {
             for (EnemyType type : new EnemyType[]{EnemyType.NORMAL, EnemyType.FAST, EnemyType.TANK, EnemyType.BOSS}) {
-                VampireSurvivorsGame game = new VampireSurvivorsGame(character, "/project/game/Map/forest.jpg");
+                ISEKAISurvivors game = new ISEKAISurvivors(character, "/project/game/Map/forest.jpg");
                 Player player = (Player) get(game, "player");
                 ((List<Weapon>) get(game, "weapons")).clear();
                 List<Enemy> enemies = (List<Enemy>) get(game, "enemies");

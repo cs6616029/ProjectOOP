@@ -37,8 +37,10 @@ final class HealthPickup {
         Graphics2D g = (Graphics2D) graphics.create();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         if (collectedAt < 0) {
-            g.setColor(new Color(0, 0, 0, 90));
-            g.fillOval(sx - 17, sy + 13, 34, 9);
+            g.setColor(new Color(0, 0, 0, 75));
+            g.fillOval(sx - 20, sy + 9, 40, 14);
+            g.setColor(new Color(0, 0, 0, 115));
+            g.fillOval(sx - 14, sy + 12, 28, 8);
         }
         g.drawImage(ANIMATION.frameAt(frame * 50L, 50), sx - 48, sy - 48, 96, 96, null);
         g.dispose();

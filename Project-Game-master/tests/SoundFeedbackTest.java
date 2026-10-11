@@ -59,7 +59,7 @@ public class SoundFeedbackTest {
         clips.put(SoundEffects.Effect.STRONG_BOY_PUNCH, punch.clip());
         check(field(SoundEffects.Effect.class, "resourceName").get(SoundEffects.Effect.SWORD).equals("sword-slash.wav"),
                 "Sword effect uses the newly supplied sound");
-        VampireSurvivorsGame game = new VampireSurvivorsGame();
+        ISEKAISurvivors game = new ISEKAISurvivors();
         Player player = (Player) field(game.getClass(), "player").get(game);
         Field clock = field(game.getClass(), "gameTimeMillis"); long now = (long) clock.get(game);
         player.lastDamageTime = now - player.invincibilityDuration;
@@ -100,7 +100,7 @@ public class SoundFeedbackTest {
             skeleton.updateMeleeAttack(fighter, 40460);
             check(slash.starts == 4, "Cancelled Skeleton slash stays silent");
         }
-        SpearWeapon hammer = new SpearWeapon(1);
+        FrostHammerWeapon hammer = new FrostHammerWeapon(1);
         Player mage = new Player(0, 0);
         Enemy target = new Enemy(120, 0, EnemyType.NORMAL, 1); target.hp = 1000;
         hammer.update(mage, List.of(), new ArrayList<>(), 49000);
@@ -132,7 +132,7 @@ public class SoundFeedbackTest {
         storm.update(mage, List.of(target), new ArrayList<>(), 63520);
         storm.update(mage, List.of(target), new ArrayList<>(), 64500);
         check(tornado.starts == 2 && tornado.stops == 1, "Next cast replays tornado sound");
-        HolyWaterWeapon holySword = new HolyWaterWeapon(5);
+        SwordOfJusticeWeapon holySword = new SwordOfJusticeWeapon(5);
         target.x = 200; target.hp = 1000;
         Enemy secondTarget = new Enemy(-200, 0, EnemyType.NORMAL, 1); secondTarget.hp = 1000;
         holySword.update(mage, List.of(), new ArrayList<>(), 70000);
@@ -167,7 +167,7 @@ public class SoundFeedbackTest {
         clips.put(SoundEffects.Effect.WALKING_NORMAL_MAPS, walk.clip());
         clips.put(SoundEffects.Effect.WALKING, lavaWalk.clip());
         for (String map : List.of("forest", "desert", "night", "lava")) {
-            VampireSurvivorsGame walkingGame = new VampireSurvivorsGame(Player.CharacterType.SURVIVOR,
+            ISEKAISurvivors walkingGame = new ISEKAISurvivors(Player.CharacterType.SURVIVOR,
                     "/project/game/Map/" + map + ".jpg");
             Playback expected = map.equals("lava") ? lavaWalk : walk;
             Playback other = map.equals("lava") ? walk : lavaWalk;

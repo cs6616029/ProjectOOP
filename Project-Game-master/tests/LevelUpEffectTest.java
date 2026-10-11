@@ -59,7 +59,7 @@ public final class LevelUpEffectTest {
             g.dispose();
             check(expired.getRGB(400, 240) == 0, "Animation must not loop");
 
-            VampireSurvivorsGame game = new VampireSurvivorsGame(type, "/project/game/Map/forest.jpg");
+            ISEKAISurvivors game = new ISEKAISurvivors(type, "/project/game/Map/forest.jpg");
             player = (Player) get(game, "player");
             LevelManager manager = (LevelManager) get(game, "levelManager");
             List<Weapon> weapons = (List<Weapon>) get(game, "weapons");

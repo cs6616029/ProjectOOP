@@ -53,7 +53,7 @@ public class MapSelectionTest {
                 if (args.length > 0 && index == resources.length - 1) javax.imageio.ImageIO.write(preview, "png", new java.io.File(args[0]));
                 click(screen, 660, 540);
                 check(selected[0].equals("/project/game/Map/" + resources[index] + ".jpg"), "Start uses selected map");
-                VampireSurvivorsGame game = new VampireSurvivorsGame(Player.CharacterType.STRONG_BOY, selected[0]);
+                ISEKAISurvivors game = new ISEKAISurvivors(Player.CharacterType.STRONG_BOY, selected[0]);
                 var render = game.getClass().getDeclaredMethod("renderToBuffer");
                 render.setAccessible(true);
                 render.invoke(game);

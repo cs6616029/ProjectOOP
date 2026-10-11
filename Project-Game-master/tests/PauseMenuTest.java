@@ -20,7 +20,7 @@ public class PauseMenuTest {
         return field.get(target);
     }
 
-    private static void click(VampireSurvivorsGame game, int x, int y) {
+    private static void click(ISEKAISurvivors game, int x, int y) {
         MouseEvent event = new MouseEvent(game, MouseEvent.MOUSE_PRESSED, 0, 0,
                 x, y, 1, false, MouseEvent.BUTTON1);
         for (var listener : game.getMouseListeners()) listener.mousePressed(event);
@@ -28,12 +28,12 @@ public class PauseMenuTest {
 
     public static void main(String[] args) throws Exception {
         boolean[] returnedToMenu = {false};
-        VampireSurvivorsGame game = new VampireSurvivorsGame(
+        ISEKAISurvivors game = new ISEKAISurvivors(
                 Player.CharacterType.SURVIVOR, "/project/game/Map/forest.jpg",
                 () -> returnedToMenu[0] = true);
-        Method updateGame = VampireSurvivorsGame.class.getDeclaredMethod("updateGame");
+        Method updateGame = ISEKAISurvivors.class.getDeclaredMethod("updateGame");
         updateGame.setAccessible(true);
-        Method renderToBuffer = VampireSurvivorsGame.class.getDeclaredMethod("renderToBuffer");
+        Method renderToBuffer = ISEKAISurvivors.class.getDeclaredMethod("renderToBuffer");
         renderToBuffer.setAccessible(true);
 
         check(!(boolean) get(game, "paused"), "Game starts unpaused");

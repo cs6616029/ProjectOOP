@@ -99,7 +99,7 @@ public class StrongBoyCharacterTest {
             ((Timer) get(screen, "animationTimer")).stop();
         }
 
-        VampireSurvivorsGame game = new VampireSurvivorsGame(selected[0], "/project/game/Map/forest.jpg");
+        ISEKAISurvivors game = new ISEKAISurvivors(selected[0], "/project/game/Map/forest.jpg");
         List<Weapon> weapons = (List<Weapon>) get(game, "weapons");
         Weapon aura = weapons.get(1);
         check(aura.getName().equals("Aurafarming") && aura.getLevel() == 1, "Strong Boy starts with Aurafarming Lv1");

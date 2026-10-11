@@ -23,7 +23,7 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
-public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListener {
+public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
 
     private static final int SCREEN_WIDTH = 900;
     private static final int SCREEN_HEIGHT = 675;
@@ -84,15 +84,15 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private int bossesDefeated;
     private int score = 0;
 
-    public VampireSurvivorsGame() {
+    public ISEKAISurvivors() {
         this(Player.CharacterType.SURVIVOR, "/project/game/Map/forest.jpg");
     }
 
-    public VampireSurvivorsGame(Player.CharacterType characterType, String mapBackgroundResource) {
+    public ISEKAISurvivors(Player.CharacterType characterType, String mapBackgroundResource) {
         this(characterType, mapBackgroundResource, () -> {});
     }
 
-    public VampireSurvivorsGame(Player.CharacterType characterType, String mapBackgroundResource,
+    public ISEKAISurvivors(Player.CharacterType characterType, String mapBackgroundResource,
             Runnable onReturnToMenu) {
         this.characterType = characterType;
         this.onReturnToMenu = onReturnToMenu;
@@ -110,12 +110,12 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
-                synchronized (VampireSurvivorsGame.this) { audioSettings.mouseReleased(); }
+                synchronized (ISEKAISurvivors.this) { audioSettings.mouseReleased(); }
             }
             @Override
             public void mousePressed(MouseEvent e) {
                 requestFocusInWindow();
-                synchronized (VampireSurvivorsGame.this) {
+                synchronized (ISEKAISurvivors.this) {
                     if (gameWon) {
                         handleVictoryClick(e);
                     } else if (paused) {
@@ -133,7 +133,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                synchronized (VampireSurvivorsGame.this) {
+                synchronized (ISEKAISurvivors.this) {
                     activeKeys.clear();
                     SoundEffects.stop(walkingSound);
                 }
@@ -142,13 +142,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         MouseAdapter pauseHover = new MouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent event) {
-                synchronized (VampireSurvivorsGame.this) {
+                synchronized (ISEKAISurvivors.this) {
                     if (paused && audioSettings.isOpen()) audioSettings.mouseDragged(event.getX(), SCREEN_WIDTH, SCREEN_HEIGHT);
                 }
             }
             @Override
             public void mouseMoved(MouseEvent event) {
-                synchronized (VampireSurvivorsGame.this) {
+                synchronized (ISEKAISurvivors.this) {
                     victoryHovered = gameWon && victoryMenuButtonBounds().contains(event.getPoint());
                     boolean overUpgrade = !paused && !gameOver && !gameWon && levelManager.handleMouseMove(event, SCREEN_WIDTH);
                     pauseHoveredButton = !paused ? -1 : resumeButtonBounds().contains(event.getPoint()) ? 0
@@ -164,7 +164,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
             @Override
             public void mouseExited(MouseEvent event) {
-                synchronized (VampireSurvivorsGame.this) {
+                synchronized (ISEKAISurvivors.this) {
                     pauseHoveredButton = -1;
                     victoryHovered = false;
                     levelManager.clearHover();
@@ -208,14 +208,14 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         int primaryWeaponIndex = characterType.getPrimaryWeaponIndex();
         weapons.add(new SwordWeapon(primaryWeaponIndex == 0 ? 1 : 0));
-        weapons.add(new GarlicWeapon(primaryWeaponIndex == 1 ? 1 : 0,
+        weapons.add(new AurafarmingWeapon(primaryWeaponIndex == 1 ? 1 : 0,
                 player.getRenderSize() / (double) player.size));
         weapons.add(new LaserWeapon(primaryWeaponIndex == 2 ? 1 : 0));
         weapons.add(new GunWeapon(0));
         weapons.add(new FireStaffWeapon(0));
-        weapons.add(new SpearWeapon(0));
-        weapons.add(new HolyWaterWeapon(0));
-        weapons.add(new ShieldWeapon(0));
+        weapons.add(new FrostHammerWeapon(0));
+        weapons.add(new SwordOfJusticeWeapon(0));
+        weapons.add(new TenRingWeapon(0));
         weapons.add(new TornadoWeapon(0));
         levelManager.setPrimaryWeapon(weapons.get(primaryWeaponIndex));
 
@@ -352,7 +352,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 SoundEffects.play(enemy.deathSound());
                 if (enemy.type == EnemyType.BOSS) {
                     visualEffects.add(VisualEffect.bossDeath(enemy.x, enemy.y, enemy.size));
-                    healthPickups.add(new HealthPickup(enemy.x, enemy.y, currentTime));
+                    healthPickups.add(new HealthPickup(enemy.x - 32, enemy.y, currentTime));
                     bossesDefeated++;
                     if (bossesDefeated == BOSS_SEQUENCE.length) {
                         gameWon = true;
@@ -366,7 +366,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                     visualEffects.add(VisualEffect.enemyDeath(enemy.x, enemy.y, enemy.size));
                 }
                 int gemXp = (enemy.type == EnemyType.BOSS) ? 50 : 5;
-                gems.add(new Gem(enemy.x, enemy.y, gemXp, enemy.type == EnemyType.BOSS));
+                double gemX = enemy.x + (enemy.type == EnemyType.BOSS ? 32 : 0);
+                gems.add(new Gem(gemX, enemy.y, gemXp, enemy.type == EnemyType.BOSS));
                 score += enemy.scoreValue;
                 eIt.remove();
                 continue;
@@ -556,7 +557,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     private static BufferedImage loadMapBackground(String resourcePath) {
         try {
-            var resource = VampireSurvivorsGame.class.getResource(resourcePath);
+            var resource = ISEKAISurvivors.class.getResource(resourcePath);
             if (resource == null) {
                 throw new IllegalStateException("Unable to find map background: " + resourcePath);
             }

@@ -4,7 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-public class GarlicWeapon extends Weapon {
+public class AurafarmingWeapon extends Weapon {
     private static final SpriteAnimation AURA_ANIMATION = SpriteAnimation.load(
             "/project/game/weapons/Aurafarming/Effect-Aurafarming.png", 4);
     private final long baseDmgInterval = 200;
@@ -18,11 +18,11 @@ public class GarlicWeapon extends Weapon {
     private final int baseRadius;
     private final int radiusPerLevel;
 
-    public GarlicWeapon(int level) {
+    public AurafarmingWeapon(int level) {
         this(level, 1.0);
     }
 
-    public GarlicWeapon(int level, double sizeScale) {
+    public AurafarmingWeapon(int level, double sizeScale) {
         super("Aurafarming", "Slowly burns nearby enemies with a golden aura", level, 1, 1);
         baseRadius = (int) Math.round(56 * sizeScale);
         radiusPerLevel = (int) Math.round(10 * sizeScale);

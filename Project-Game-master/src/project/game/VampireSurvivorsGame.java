@@ -37,6 +37,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private Graphics2D dbg;
     private final BufferedImage mapBackground;
     private final MapMusic mapMusic;
+    private final SoundEffects.Effect walkingSound;
     private final Player.CharacterType characterType;
     private final Runnable onReturnToMenu;
 
@@ -97,6 +98,11 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         this.onReturnToMenu = onReturnToMenu;
         mapBackground = loadMapBackground(mapBackgroundResource);
         mapMusic = new MapMusic(mapBackgroundResource);
+        walkingSound = switch (mapBackgroundResource) {
+            case "/project/game/Map/forest.jpg", "/project/game/Map/desert.jpg", "/project/game/Map/night.jpg"
+                    -> SoundEffects.Effect.WALKING_NORMAL_MAPS;
+            default -> SoundEffects.Effect.WALKING;
+        };
         setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         setFocusable(true);
         requestFocus();
@@ -129,7 +135,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             public void focusLost(FocusEvent e) {
                 synchronized (VampireSurvivorsGame.this) {
                     activeKeys.clear();
-                    SoundEffects.stop(SoundEffects.Effect.WALKING);
+                    SoundEffects.stop(walkingSound);
                 }
             }
         });
@@ -172,11 +178,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private synchronized void initGame() {
+        SoundEffects.stop(SoundEffects.Effect.WALKING);
+        SoundEffects.stop(SoundEffects.Effect.WALKING_NORMAL_MAPS);
         audioSettings.close();
         paused = false;
         pauseHoveredButton = -1;
         setCursor(java.awt.Cursor.getDefaultCursor());
-        SoundEffects.stop(SoundEffects.Effect.WALKING);
+        SoundEffects.stop(walkingSound);
         player = new Player(0, 0, characterType);
         enemies.clear();
         gems.clear();
@@ -278,7 +286,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         lastUpdateNanos = nowNanos;
         if (gameOver || gameWon || paused || levelManager.isLevelUping()) {
             if (gameOver || gameWon) mapMusic.stop(); else mapMusic.pause();
-            SoundEffects.stop(SoundEffects.Effect.WALKING);
+            SoundEffects.stop(walkingSound);
             return;
         }
 
@@ -294,8 +302,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         if (activeKeys.contains(KeyEvent.VK_A) || activeKeys.contains(KeyEvent.VK_LEFT)) dx -= 1;
         if (activeKeys.contains(KeyEvent.VK_D) || activeKeys.contains(KeyEvent.VK_RIGHT)) dx += 1;
 
-        if (dx == 0 && dy == 0) SoundEffects.stop(SoundEffects.Effect.WALKING);
-        else SoundEffects.loop(SoundEffects.Effect.WALKING);
+        if (dx == 0 && dy == 0) SoundEffects.stop(walkingSound);
+        else SoundEffects.loop(walkingSound);
         player.move(dx, dy);
 
         cameraX = player.x - (SCREEN_WIDTH / 2.0);
@@ -350,7 +358,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                         gameWon = true;
                         mapMusic.stop();
                         activeKeys.clear();
-                        SoundEffects.stop(SoundEffects.Effect.WALKING);
+                        SoundEffects.stop(walkingSound);
                     } else {
                         nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
                     }
@@ -406,7 +414,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 gIt.remove();
                 if (levelManager.isLevelUping()) {
                     activeKeys.clear();
-                    SoundEffects.stop(SoundEffects.Effect.WALKING);
+                    SoundEffects.stop(walkingSound);
                     return;
                 }
             }
@@ -444,7 +452,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             mapMusic.stop();
             gameOver = true;
             activeKeys.clear();
-            SoundEffects.stop(SoundEffects.Effect.WALKING);
+            SoundEffects.stop(walkingSound);
         }
     }
 
@@ -656,7 +664,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private void returnToMenu() {
         mapMusic.stop();
         running = false;
-        SoundEffects.stop(SoundEffects.Effect.WALKING);
+        SoundEffects.stop(walkingSound);
         SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
         onReturnToMenu.run();
     }
@@ -668,7 +676,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         pauseHoveredButton = -1;
         setCursor(java.awt.Cursor.getDefaultCursor());
         activeKeys.clear();
-        SoundEffects.stop(SoundEffects.Effect.WALKING);
+        SoundEffects.stop(walkingSound);
         lastUpdateNanos = System.nanoTime();
     }
 

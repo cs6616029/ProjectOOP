@@ -61,7 +61,10 @@ public class HolyWaterWeapon extends Weapon {
             for (int i = 0; i < count; i++) {
                 strikes.add(new JusticeStrike(targets.get(i), scaleStat(60, 10), getDamage(), currentTime));
             }
-            if (count > 0) lastAttackTime = currentTime;
+            if (count > 0) {
+                SoundEffects.play(SoundEffects.Effect.SWORD_OF_JUSTICE);
+                lastAttackTime = currentTime;
+            }
         }
         Iterator<JusticeStrike> iterator = strikes.iterator();
         while (iterator.hasNext()) {

@@ -22,6 +22,7 @@ final class StrongBoyPunch {
         if (attacking) { x = player.x; y = player.y; }
         if (attacking && !hit && now - started >= IMPACT) {
             hit = true;
+            SoundEffects.play(SoundEffects.Effect.STRONG_BOY_PUNCH);
             for (Enemy enemy : enemies) {
                 if (enemy.hp <= 0) continue;
                 double dx = enemy.x - x - Math.cos(angle) * 26, dy = enemy.y - y - Math.sin(angle) * 26;

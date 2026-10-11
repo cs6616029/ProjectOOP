@@ -30,6 +30,9 @@ final class SoundEffects {
         LASER("Laser (1).wav"),
         SWORD("sword-slash.wav"),
         FROST_HAMMER("effect-frost.wav"),
+        TORNADO("tornado.wav"),
+        SWORD_OF_JUSTICE("sword-of-justice.wav"),
+        STRONG_BOY_PUNCH("strong-boy-punch.wav"),
         PLAYER_HURT("classic_hurt.wav"),
         FLAME("flames-effect.wav"),
         EXPLOSION("explosion.wav"),
@@ -37,7 +40,8 @@ final class SoundEffects {
         MUSIC_DESERT("desert-musicbg.wav"),
         MUSIC_NIGHT("night-musicbg.wav"),
         MUSIC_LAVA("lava-musicbg.wav"),
-        WALKING("walking_6QdYC8X.wav");
+        WALKING("walking_6QdYC8X.wav"),
+        WALKING_NORMAL_MAPS("walk.wav");
 
         private final String resourceName;
 
@@ -88,7 +92,9 @@ final class SoundEffects {
         Clip clip = getClip(effect);
         if (clip == null) return;
         if (clip.isRunning()) {
-            if (effect != Effect.SWORD && effect != Effect.PLAYER_HURT && effect != Effect.FROST_HAMMER) return;
+            if (effect != Effect.SWORD && effect != Effect.PLAYER_HURT
+                    && effect != Effect.FROST_HAMMER && effect != Effect.TORNADO
+                    && effect != Effect.SWORD_OF_JUSTICE && effect != Effect.STRONG_BOY_PUNCH) return;
             clip.stop();
         }
 

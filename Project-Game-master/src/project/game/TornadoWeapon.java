@@ -73,6 +73,7 @@ public class TornadoWeapon extends Weapon {
         animationTime = time;
         if (storms.isEmpty() && time - lastAttackTime >= (long) (4500 * player.attackCooldownMultiplier)
                 && findClosestEnemy(player, enemies) != null) {
+            SoundEffects.play(SoundEffects.Effect.TORNADO);
             int count = getTornadoCount();
             for (int i = 0; i < count; i++) storms.add(new Storm(time, Math.PI * 2 * i / count, getDamage()));
             lastAttackTime = time;

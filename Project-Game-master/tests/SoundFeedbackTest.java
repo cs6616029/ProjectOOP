@@ -14,12 +14,13 @@ public class SoundFeedbackTest {
         Field f = type.getDeclaredField(name); f.setAccessible(true); return f;
     }
     private static final class Playback {
-        int starts, stops; boolean running;
+        int starts, stops, loops; boolean running;
         Clip clip() {
             return (Clip) Proxy.newProxyInstance(Clip.class.getClassLoader(), new Class<?>[]{Clip.class}, (p, method, args) -> {
                 switch (method.getName()) {
                     case "isRunning": return running;
                     case "start": starts++; running = true; return null;
+                    case "loop": loops++; running = true; return null;
                     case "stop": stops++; running = false; return null;
                     case "setFramePosition": check((int) args[0] == 0, "Effects replay from the start"); return null;
                     default: throw new AssertionError("Unexpected audio operation: " + method.getName());
@@ -29,17 +30,33 @@ public class SoundFeedbackTest {
     }
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        for (String name : List.of("classic_hurt.wav", "sword-slash.wav", "effect-frost.wav")) {
+        for (String name : List.of("classic_hurt.wav", "sword-slash.wav", "effect-frost.wav", "tornado.wav",
+                "sword-of-justice.wav", "strong-boy-punch.wav", "walk.wav")) {
             try (var audio = AudioSystem.getAudioInputStream(SoundFeedbackTest.class.getResource("/project/game/sounds/" + name))) {
-                check(audio.getFormat().getSampleSizeInBits() == 16 && audio.getFormat().getSampleRate() == 44100,
-                        "MP3 is packaged as compatible PCM WAV");
-                check(audio.getFrameLength() > 1000 && audio.readAllBytes().length > 4000, "Converted sound contains playable audio");
+                check(audio.getFormat().getSampleSizeInBits() == 16
+                        && audio.getFormat().getSampleRate() == (name.equals("tornado.wav") ? 48000 : 44100),
+                        "Supplied sound is packaged as compatible PCM WAV");
+                byte[] samples = audio.readAllBytes();
+                check(audio.getFrameLength() > 1000 && samples.length > 4000, "Converted sound contains playable audio");
+                if (name.equals("tornado.wav")) {
+                    int bytes = Math.min(samples.length, (int) (audio.getFormat().getSampleRate() * .1) * audio.getFormat().getFrameSize());
+                    double energy = 0;
+                    for (int i = 0; i < bytes - 1; i += 2) {
+                        int sample = (short) ((samples[i] & 255) | (samples[i + 1] << 8));
+                        energy += sample * (double) sample;
+                    }
+                    check(Math.sqrt(energy / (bytes / 2)) > 500, "Tornado is audible in first 100ms of orbit, without quiet introduction");
+                }
             }
         }
         Map<SoundEffects.Effect, Clip> clips = (Map<SoundEffects.Effect, Clip>) field(SoundEffects.class, "clips").get(null);
-        Playback hurt = new Playback(), slash = new Playback(), frost = new Playback();
+        Playback hurt = new Playback(), slash = new Playback(), frost = new Playback(), tornado = new Playback(), justice = new Playback();
+        Playback punch = new Playback();
         clips.put(SoundEffects.Effect.PLAYER_HURT, hurt.clip()); clips.put(SoundEffects.Effect.SWORD, slash.clip());
         clips.put(SoundEffects.Effect.FROST_HAMMER, frost.clip());
+        clips.put(SoundEffects.Effect.TORNADO, tornado.clip());
+        clips.put(SoundEffects.Effect.SWORD_OF_JUSTICE, justice.clip());
+        clips.put(SoundEffects.Effect.STRONG_BOY_PUNCH, punch.clip());
         check(field(SoundEffects.Effect.class, "resourceName").get(SoundEffects.Effect.SWORD).equals("sword-slash.wav"),
                 "Sword effect uses the newly supplied sound");
         VampireSurvivorsGame game = new VampireSurvivorsGame();
@@ -101,6 +118,74 @@ public class SoundFeedbackTest {
         hammer.update(mage, List.of(target), new ArrayList<>(), 51680);
         check(frost.starts == 2 && frost.stops == 1 && target.hp == 968,
                 "Next ground slam replays frost sound even if target dodges and previous audio is still running");
-        System.out.println("PASS: PCM audio, accepted hurt, sword replay, Skeleton slash timing, Frost Hammer impact timing and replay");
+        TornadoWeapon storm = new TornadoWeapon(5);
+        target.x = 400; target.hp = 1000;
+        storm.update(mage, List.of(), new ArrayList<>(), 60000);
+        check(tornado.starts == 0, "Tornado without target stays silent");
+        storm.update(mage, List.of(target), new ArrayList<>(), 60000);
+        check(tornado.starts == 1, "Summoning three tornadoes plays one sound per cast");
+        storm.update(mage, List.of(target), new ArrayList<>(), 60000);
+        storm.update(mage, List.of(target), new ArrayList<>(), 60600);
+        storm.update(mage, List.of(target), new ArrayList<>(), 61200);
+        check(tornado.starts == 1, "Orbit and launch do not repeat cast sound");
+        storm.update(mage, List.of(target), new ArrayList<>(), 63200);
+        storm.update(mage, List.of(target), new ArrayList<>(), 63520);
+        storm.update(mage, List.of(target), new ArrayList<>(), 64500);
+        check(tornado.starts == 2 && tornado.stops == 1, "Next cast replays tornado sound");
+        HolyWaterWeapon holySword = new HolyWaterWeapon(5);
+        target.x = 200; target.hp = 1000;
+        Enemy secondTarget = new Enemy(-200, 0, EnemyType.NORMAL, 1); secondTarget.hp = 1000;
+        holySword.update(mage, List.of(), new ArrayList<>(), 70000);
+        check(justice.starts == 0, "Sword of Justice without targets stays silent");
+        holySword.update(mage, List.of(target, secondTarget), new ArrayList<>(), 70000);
+        check(justice.starts == 1 && target.hp == 1000, "Two falling swords play one sound immediately on cast");
+        holySword.update(mage, List.of(target, secondTarget), new ArrayList<>(), 70000);
+        holySword.update(mage, List.of(target, secondTarget), new ArrayList<>(), 70320);
+        check(justice.starts == 1, "Falling swords and impacts do not repeat cast sound");
+        holySword.update(mage, List.of(target, secondTarget), new ArrayList<>(), 72499);
+        check(justice.starts == 1, "Justice cooldown suppresses extra sound");
+        holySword.update(mage, List.of(target, secondTarget), new ArrayList<>(), 72500);
+        check(justice.starts == 2 && justice.stops == 1, "Next Justice cast replays supplied sound");
+        StrongBoyPunch fists = new StrongBoyPunch();
+        target.x = 70; target.hp = 1000;
+        fists.update(mage, List.of(), 79000);
+        fists.update(mage, List.of(target), 80000);
+        fists.update(mage, List.of(target), 80239);
+        check(punch.starts == 0, "Strong Boy windup and lunge stay silent before punch");
+        fists.update(mage, List.of(target), 80240);
+        check(punch.starts == 1 && target.hp == 982, "Punch sound plays with the 18-damage impact");
+        fists.update(mage, List.of(target), 80240); fists.update(mage, List.of(target), 80600);
+        check(punch.starts == 1, "Punch animation cannot repeat audio");
+        fists.update(mage, List.of(target), 80900); target.x = 400;
+        fists.update(mage, List.of(target), 81140);
+        check(punch.starts == 2 && punch.stops == 1 && target.hp == 982, "Next punch replays sound even when target dodges");
+        StrongBoyPunch cancelledPunch = new StrongBoyPunch(); target.x = 70;
+        cancelledPunch.update(mage, List.of(target), 82000); mage.hp = 0;
+        cancelledPunch.update(mage, List.of(target), 82240);
+        check(punch.starts == 2, "Death cancels pending punch sound");
+        Playback walk = new Playback(), lavaWalk = new Playback();
+        clips.put(SoundEffects.Effect.WALKING_NORMAL_MAPS, walk.clip());
+        clips.put(SoundEffects.Effect.WALKING, lavaWalk.clip());
+        for (String map : List.of("forest", "desert", "night", "lava")) {
+            VampireSurvivorsGame walkingGame = new VampireSurvivorsGame(Player.CharacterType.SURVIVOR,
+                    "/project/game/Map/" + map + ".jpg");
+            Playback expected = map.equals("lava") ? lavaWalk : walk;
+            Playback other = map.equals("lava") ? walk : lavaWalk;
+            int previousLoops = expected.loops;
+            var tick = walkingGame.getClass().getDeclaredMethod("updateGame"); tick.setAccessible(true);
+            var pressed = new java.awt.event.KeyEvent(walkingGame, java.awt.event.KeyEvent.KEY_PRESSED, 0, 0,
+                    java.awt.event.KeyEvent.VK_W, 'w');
+            walkingGame.keyPressed(pressed); tick.invoke(walkingGame); tick.invoke(walkingGame);
+            check(expected.running && expected.loops == previousLoops + 1 && !other.running,
+                    "Only map-specific walking sound loops once while moving: " + map);
+            walkingGame.keyReleased(new java.awt.event.KeyEvent(walkingGame, java.awt.event.KeyEvent.KEY_RELEASED, 0, 0,
+                    java.awt.event.KeyEvent.VK_W, 'w')); tick.invoke(walkingGame);
+            check(!expected.running, "Stopping movement stops footsteps: " + map);
+            walkingGame.keyPressed(pressed); tick.invoke(walkingGame);
+            walkingGame.keyPressed(new java.awt.event.KeyEvent(walkingGame, java.awt.event.KeyEvent.KEY_PRESSED, 0, 0,
+                    java.awt.event.KeyEvent.VK_ESCAPE, java.awt.event.KeyEvent.CHAR_UNDEFINED));
+            check(!expected.running, "Pause immediately stops map footsteps: " + map);
+        }
+        System.out.println("PASS: supplied PCM sounds, skill timing and replay, walk.wav for maps 1-3 only, original Lava footsteps, movement and pause");
     }
 }

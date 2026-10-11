@@ -10,6 +10,7 @@ import java.util.List;
 
 public class LevelManager {
     private static final int MAX_OPTIONS = 5;
+    private static final int MAX_ATTACK_SKILLS = 3;
     private Weapon primaryWeapon;
     private int level = 1;
     private int xp = 0;
@@ -45,8 +46,17 @@ public class LevelManager {
     }
 
     private boolean canUpgrade(Object upgrade) {
+        if (upgrade instanceof Weapon && ((Weapon) upgrade).getLevel() == 0 && attackSkillsFull()) return false;
+        if (upgrade instanceof Weapon && primaryWeapon != null && upgrade != primaryWeapon
+                && (upgrade instanceof SwordWeapon || upgrade instanceof GarlicWeapon || upgrade instanceof LaserWeapon)) {
+            return false;
+        }
         return upgrade instanceof Weapon ? ((Weapon) upgrade).getLevel() < 5
                 : ((PassiveItem) upgrade).getLevel() < ((PassiveItem) upgrade).getMaxLevel();
+    }
+
+    private boolean attackSkillsFull() {
+        return availableWeapons.stream().filter(weapon -> weapon.getLevel() > 0).count() >= MAX_ATTACK_SKILLS;
     }
 
     public synchronized void gainXP(int amount, Player player, List<Weapon> weapons, List<PassiveItem> passiveItems) {
@@ -83,13 +93,14 @@ public class LevelManager {
     private void generateUpgradeOptions(List<Weapon> weapons, List<PassiveItem> passiveItems) {
         offeredUpgrades.clear();
         List<Object> pool = new ArrayList<>();
-        if (primaryWeapon != null && weapons.contains(primaryWeapon)) {
+        if (primaryWeapon != null && weapons.contains(primaryWeapon)
+                && (!attackSkillsFull() || canUpgrade(primaryWeapon))) {
             offeredUpgrades.add(primaryWeapon);
         }
 
         // กรองเอาเฉพาะอาวุธที่ยังอัปเกรดไม่เต็ม
         for (Weapon w : weapons) {
-            if (w != primaryWeapon && w.getLevel() < 5) {
+            if (w != primaryWeapon && canUpgrade(w)) {
                 pool.add(w);
             }
         }

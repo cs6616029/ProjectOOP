@@ -77,6 +77,17 @@ public class FrostHammerTest {
             g.dispose(); check(same(actual, expected), "All eleven ice frames play without blank atlas cells"); effect.update();
         }
         check(effect.isFinished(), "Ice explosion ends without looping");
+        SpearWeapon largeHammer = new SpearWeapon(5);
+        Enemy center = enemy(220, 0, EnemyType.TANK);
+        Enemy expandedEdge = enemy(220, 140, EnemyType.NORMAL);
+        Enemy outsideBlast = enemy(220, 190, EnemyType.NORMAL);
+        List<VisualEffect> largeEffects = new ArrayList<>();
+        largeHammer.update(p, List.of(center, expandedEdge, outsideBlast), largeEffects, 10000);
+        largeHammer.update(p, List.of(center, expandedEdge, outsideBlast), largeEffects, 10480);
+        check((int) get(largeHammer, "swingWidth") == 313, "Level five hammer is visibly larger than level one's 173 pixels");
+        check(largeEffects.size() == 1 && largeEffects.get(0).radius == 135, "Ice effect grows with the damage radius");
+        check(expandedEdge.hp == 928 && expandedEdge.isFrozen(), "Larger ice blast damages and freezes newly covered enemies");
+        check(outsideBlast.hp == 1000 && !outsideBlast.isFrozen(), "Larger blast still respects its outer boundary");
         for (BossSkill.Kind kind : BossSkill.Kind.values()) {
             Enemy boss = new Enemy(120, 0, EnemyType.BOSS, 1, kind); boss.hp = 1000;
             SpearWeapon hammer = new SpearWeapon(1);

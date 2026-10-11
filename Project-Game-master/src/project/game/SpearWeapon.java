@@ -6,6 +6,8 @@ import java.util.List;
 
 /** Keeps the existing upgrade slot for the Frost Hammer replacement. */
 public class SpearWeapon extends Weapon {
+    private static final int BASE_RANGE = 138, RANGE_PER_LEVEL = 28;
+    private static final int BASE_RADIUS = 55, RADIUS_PER_LEVEL = 20;
     private long lastAttackTime, attackStart, animationTime;
     private boolean swinging, impacted;
     private double originX, originY, angle, impactX, impactY;
@@ -17,8 +19,8 @@ public class SpearWeapon extends Weapon {
 
     @Override
     public String getUpgradeDescription() {
-        return super.getUpgradeDescription() + " | " + upgradeStat("Range", 138, 18)
-                + " | " + upgradeStat("Radius", 55, 8);
+        return super.getUpgradeDescription() + " | " + upgradeStat("Range", BASE_RANGE, RANGE_PER_LEVEL)
+                + " | " + upgradeStat("Radius", BASE_RADIUS, RADIUS_PER_LEVEL);
     }
 
     @Override
@@ -40,12 +42,12 @@ public class SpearWeapon extends Weapon {
         if (!swinging && time - lastAttackTime >= (long) (1200 * player.attackCooldownMultiplier)) {
             Enemy target = findClosestEnemy(player, enemies);
             if (target == null || Math.hypot(target.x - player.x, target.y - player.y)
-                    > scaleStat(138, 18) + target.size * 0.25) return;
+                    > scaleStat(BASE_RANGE, RANGE_PER_LEVEL) + target.size * 0.25) return;
             originX = player.x;
             originY = player.y;
             angle = Math.atan2(target.y - originY, target.x - originX);
-            swingWidth = (int) Math.round(scaleStat(138, 18) * 1.25);
-            blastRadius = scaleStat(55, 8);
+            swingWidth = (int) Math.round(scaleStat(BASE_RANGE, RANGE_PER_LEVEL) * 1.25);
+            blastRadius = scaleStat(BASE_RADIUS, RADIUS_PER_LEVEL);
             swingDamage = getDamage();
             impactX = originX + Math.cos(angle) * swingWidth * 0.70;
             impactY = originY + Math.sin(angle) * swingWidth * 0.70;

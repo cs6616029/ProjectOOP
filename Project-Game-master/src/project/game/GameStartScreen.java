@@ -1,371 +1,240 @@
 package project.game;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
-import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.*;
 
 public final class GameStartScreen extends JPanel {
-    private static final int DESIGN_WIDTH = 800;
-    private static final int DESIGN_HEIGHT = 600;
-    private static final int WINDOW_WIDTH = 900;
-    private static final int WINDOW_HEIGHT = 675;
-
-    private enum Page {
-        START,
-        PLAYER,
-        MAP
-    }
-
-    private static final Color GOLD = new Color(255, 199, 74);
-    private static final Color PANEL = new Color(8, 17, 31, 225);
-
+    private static final int DESIGN_WIDTH = 800, DESIGN_HEIGHT = 600;
+    private static final Color GOLD = new Color(241,197,113), WHITE = new Color(247,235,214);
+    private static final Color MUTED = new Color(158,164,157), RED = new Color(191,69,59), PANEL = new Color(16,22,25,238);
+    private static final Font PIXEL_FONT = loadFont();
+    static Font pixelFont(float size) { return PIXEL_FONT.deriveFont(size); }
+    private enum Page { START, PLAYER, MAP }
     private static final Player.CharacterType[] CHARACTERS = Player.CharacterType.values();
+    private static final String[] HERO_NAMES = {"SWORDSMAN","IRON MAN","STRONG BOY"};
+    private static final String[] HERO_ROLES = {"THE BLADE","THE ARSENAL","THE POWERHOUSE"};
+    private static final String[] SKILLS = {"SWORD","LASER","AURAFARMING"};
+    private static final String[] HERO_DETAILS = {"Strike enemies up close.","Cut through with energy.","Surround yourself in power."};
     private static final MapOption[] MAPS = {
-        new MapOption("Enchanted Forest", "/project/game/Map/forest.jpg"),
-        new MapOption("Desert", "/project/game/Map/desert.jpg"),
-        new MapOption("Night", "/project/game/Map/night.jpg"),
-        new MapOption("Lava", "/project/game/Map/lava.jpg")
+        new MapOption("Enchanted Forest","/project/game/Map/forest.jpg","GREEN WILDS","Where the hunt begins."),
+        new MapOption("Desert","/project/game/Map/desert.jpg","GOLDEN SANDS","An endless sea of sand."),
+        new MapOption("Night","/project/game/Map/night.jpg","AFTER DARK","Step into the moonlight."),
+        new MapOption("Lava","/project/game/Map/lava.jpg","ASH & EMBER","Walk through the fire.")
     };
-
-    private final BiConsumer<Player.CharacterType, String> onGameStart;
-    private final BufferedImage startBackground =
-            loadImage("/project/game/startBG/23815429.png");
+    private final BiConsumer<Player.CharacterType,String> onGameStart;
     private final SpriteAnimation[] characterPreviews = new SpriteAnimation[CHARACTERS.length];
     private final BufferedImage[] mapPreviews = new BufferedImage[MAPS.length];
     private final Timer animationTimer;
-
     private Page page = Page.START;
-    private int selectedCharacter;
-    private int selectedMap;
-    private int hoveredIndex = -1;
-    private boolean primaryButtonHovered;
-    private boolean backButtonHovered;
+    private int selectedCharacter, selectedMap, hoveredIndex = -1;
+    private boolean primaryButtonHovered, backButtonHovered, launching;
 
-    public GameStartScreen(BiConsumer<Player.CharacterType, String> onGameStart) {
+    public GameStartScreen(BiConsumer<Player.CharacterType,String> onGameStart) {
         this.onGameStart = onGameStart;
-        setPreferredSize(new java.awt.Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
-        setFocusable(true);
-
-        for (int index = 0; index < CHARACTERS.length; index++) {
-            characterPreviews[index] = SpriteAnimation.load(CHARACTERS[index].getIdleSpriteResource(), 8);
-        }
-        for (int index = 0; index < MAPS.length; index++) {
-            mapPreviews[index] = loadImage(MAPS[index].resource);
-        }
-
-        MouseAdapter mouseHandler = new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent event) {
-                handleClick(toDesignX(event.getX()), toDesignY(event.getY()));
-            }
-
-            @Override
-            public void mouseMoved(MouseEvent event) {
-                updateHover(toDesignX(event.getX()), toDesignY(event.getY()));
-            }
+        setPreferredSize(new Dimension(900,675)); setFocusable(true);
+        for(int i=0;i<CHARACTERS.length;i++) characterPreviews[i]=SpriteAnimation.load(CHARACTERS[i].getIdleSpriteResource(),8);
+        for(int i=0;i<MAPS.length;i++) mapPreviews[i]=loadImage(MAPS[i].resource);
+        MouseAdapter mouse=new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { if(e.getButton()==MouseEvent.BUTTON1) handleClick(toDesignX(e.getX()),toDesignY(e.getY())); }
+            @Override public void mouseMoved(MouseEvent e) { updateHover(toDesignX(e.getX()),toDesignY(e.getY())); }
+            @Override public void mouseExited(MouseEvent e) { updateHover(-1,-1); }
         };
-        addMouseListener(mouseHandler);
-        addMouseMotionListener(mouseHandler);
-        animationTimer = new Timer(100, event -> {
-            if (page == Page.PLAYER) {
-                repaint();
-            }
-        });
-        animationTimer.start();
+        addMouseListener(mouse); addMouseMotionListener(mouse);
+        bind("ENTER","continue",this::advance); bind("ESCAPE","back",this::back);
+        bind("LEFT","previous",()->selectBy(-1)); bind("RIGHT","next",()->selectBy(1));
+        bind("UP","up",()->selectBy(page==Page.MAP?-2:-1)); bind("DOWN","down",()->selectBy(page==Page.MAP?2:1));
+        animationTimer=new Timer(100,e->repaint()); animationTimer.start();
     }
-
-    @Override
-    protected void paintComponent(Graphics graphics) {
-        super.paintComponent(graphics);
-        Graphics2D g = (Graphics2D) graphics.create();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g.scale((double) getWidth() / DESIGN_WIDTH, (double) getHeight() / DESIGN_HEIGHT);
-
+    @Override public void addNotify() { super.addNotify(); if(!launching) animationTimer.start(); }
+    @Override public void removeNotify() { animationTimer.stop(); super.removeNotify(); }
+    private void bind(String key,String name,Runnable action) {
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key),name);
+        getActionMap().put(name,new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { action.run(); } });
+    }
+    @Override protected void paintComponent(Graphics graphics) {
+        super.paintComponent(graphics); Graphics2D g=(Graphics2D)graphics.create();
+        g.scale(getWidth()/800.0,getHeight()/600.0);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         drawBackground(g);
-        if (page == Page.START) {
-            drawStartPage(g);
-        } else if (page == Page.PLAYER) {
-            drawPlayerPage(g);
-        } else {
-            drawMapPage(g);
-        }
-        g.dispose();
+        if(page==Page.START) drawStartPage(g); else if(page==Page.PLAYER) drawPlayerPage(g); else drawMapPage(g);
+        text(g,"FONT: BOLDPIXELS BY YUKIPIXELS",10,MUTED,48,586);
+        rightText(g,"VAMPIRE SURVIVORS",10,MUTED,752,586); g.dispose();
     }
-
     private void drawBackground(Graphics2D g) {
-        g.drawImage(startBackground, 0, 0, DESIGN_WIDTH, DESIGN_HEIGHT, null);
-        g.setPaint(new GradientPaint(0, 0, new Color(5, 12, 25, 120),
-                0, DESIGN_HEIGHT, new Color(3, 8, 17, 220)));
-        g.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
+        cover(g,mapPreviews[page==Page.MAP?selectedMap:0],0,0,800,600);
+        g.setColor(new Color(5,12,14,190)); g.fillRect(0,0,800,600);
+        g.setPaint(new GradientPaint(0,0,new Color(7,11,17,75),0,600,new Color(8,10,15,245))); g.fillRect(0,0,800,600);
+        long phase=System.currentTimeMillis()/180;
+        for(int i=0;i<24;i++) {
+            int x=32+i*137%738, y=(int)((i*97+phase)%560)+20;
+            g.setColor(new Color(241,197,113,30+i%4*14)); g.fillRect(x,y,i%3==0?3:2,2);
+        }
+        g.setColor(new Color(241,197,113,32)); g.drawRect(20,20,759,559);
+        for(int x:new int[]{20,768}) for(int y:new int[]{20,568}) {
+            g.setColor(GOLD); g.fillRect(x,y,12,2); g.fillRect(x,y,2,12);
+        }
     }
-
     private void drawStartPage(Graphics2D g) {
-        g.setColor(new Color(0, 0, 0, 100));
-        g.fillRoundRect(105, 95, 590, 390, 28, 28);
-
-        g.setColor(GOLD);
-        g.setFont(new Font("SansSerif", Font.BOLD, 17));
-        drawCentered(g, "SURVIVE THE NIGHT", DESIGN_WIDTH / 2, 170);
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("SansSerif", Font.BOLD, 50));
-        drawCentered(g, "VAMPIRE", DESIGN_WIDTH / 2, 235);
-        drawCentered(g, "SURVIVORS", DESIGN_WIDTH / 2, 290);
-        g.setColor(new Color(223, 230, 242));
-        g.setFont(new Font("SansSerif", Font.PLAIN, 17));
-        drawCentered(g, "Choose a hero, choose a map, survive the night!", DESIGN_WIDTH / 2, 333);
-        drawPrimaryButton(g, new Rectangle(295, 390, 210, 62), "Start Game");
-        g.setColor(new Color(225, 230, 240, 210));
-        g.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        drawCentered(g, "Move with W A S D or the arrow keys", DESIGN_WIDTH / 2, 475);
+        text(g,"VS / SURVIVAL",14,GOLD,48,56); rightText(g,"3 HEROES  /  4 WORLDS",12,MUTED,752,56);
+        centered(g,"SURVIVE. EVOLVE. CONQUER.",14,WHITE,400,109);
+        title(g,"VAMPIRE",54,400,179,WHITE); title(g,"SURVIVORS",64,400,242,GOLD);
+        g.setColor(RED); g.fillRect(360,260,80,3);
+        for(int i=0;i<CHARACTERS.length;i++) {
+            int cx=400+(i-1)*118; g.setColor(new Color(0,0,0,125)); g.fillOval(cx-34,348,68,12);
+            hero(g,i,cx,290,i==1?138:128);
+        }
+        drawButton(g,primaryButton(),"START GAME  >",true,primaryButtonHovered);
+        centered(g,"Pick your hero. Find your world. Face the horde.",13,WHITE,400,478);
+        centered(g,"W A S D / ARROWS TO MOVE     |     AUTO ATTACK",12,MUTED,400,535);
+        centered(g,"ENTER TO BEGIN",11,GOLD,400,556);
     }
-
+    private void drawHeader(Graphics2D g,String title,String subtitle) {
+        text(g,"VAMPIRE SURVIVORS",12,GOLD,48,49); rightText(g,page==Page.PLAYER?"01 / HERO":"02 / WORLD",12,MUTED,752,49);
+        text(g,title,34,WHITE,48,104); text(g,subtitle,13,MUTED,49,131);
+        g.setColor(new Color(241,197,113,60)); g.fillRect(48,149,704,1);
+    }
     private void drawPlayerPage(Graphics2D g) {
-        drawHeader(g, "Choose Your Hero", "Select a hero to begin your adventure");
-        for (int index = 0; index < CHARACTERS.length; index++) {
-            Rectangle card = playerCard(index);
-            boolean selected = index == selectedCharacter;
-            drawCard(g, card, selected, hoveredIndex == index);
-            g.setColor(GOLD);
-            g.setFont(new Font("SansSerif", Font.BOLD, 20));
-            drawCentered(g, CHARACTERS[index].getDisplayName(), card.x + card.width / 2, card.y + 42);
-
-            BufferedImage preview = characterPreviews[index].frameAt(System.currentTimeMillis(), 180);
-            int frameWidth = preview.getWidth();
-            int frameHeight = preview.getHeight();
-            int previewHeight = 135;
-            int previewWidth = Math.max(70, previewHeight * frameWidth / frameHeight);
-            g.drawImage(preview, card.x + (card.width - previewWidth) / 2,
-                    card.y + 62, previewWidth, previewHeight, null);
-            g.setColor(new Color(218, 226, 239));
-            g.setFont(new Font("SansSerif", Font.PLAIN, 14));
-            String details = switch (CHARACTERS[index]) {
-                case SURVIVOR -> "Starts with Sword";
-                case IRON_GUARDIAN -> "Starts with Laser";
-                case STRONG_BOY -> "Starts with Aurafarming";
-            };
-            drawCentered(g, details, card.x + card.width / 2, card.y + 220);
-            if (selected) {
-                drawBadge(g, card.x + card.width / 2 - 42, card.y + 226, "SELECTED");
-            }
+        drawHeader(g,"CHOOSE YOUR HERO","Three heroes. Three powers. One chance to survive.");
+        for(int i=0;i<CHARACTERS.length;i++) {
+            Rectangle card=playerCard(i); boolean selected=selectedCharacter==i;
+            drawCard(g,card,selected,hoveredIndex==i);
+            text(g,"0"+(i+1),14,selected?GOLD:MUTED,card.x+16,card.y+24);
+            rightText(g,HERO_ROLES[i],10,MUTED,card.x+card.width-16,card.y+24);
+            centered(g,HERO_NAMES[i],22,WHITE,card.x+card.width/2,card.y+59);
+            g.setColor(new Color(241,197,113,selected?30:12)); g.fillRect(card.x+48,card.y+80,card.width-96,104);
+            g.setColor(new Color(0,0,0,130)); g.fillOval(card.x+72,card.y+175,76,12);
+            hero(g,i,card.x+card.width/2,card.y+85,i==2?156:144);
+            centered(g,"STARTING SKILL",10,MUTED,card.x+card.width/2,card.y+204);
+            centered(g,SKILLS[i],17,GOLD,card.x+card.width/2,card.y+227);
+            centered(g,HERO_DETAILS[i],11,MUTED,card.x+card.width/2,card.y+247);
+            if(selected) { g.setColor(GOLD); g.fillRect(card.x+1,card.y+card.height-21,card.width-2,20); }
+            centered(g,selected?"SELECTED":"CLICK TO SELECT",10,selected?PANEL:MUTED,card.x+card.width/2,card.y+card.height-7);
         }
-        drawSecondaryButton(g, new Rectangle(48, 520, 130, 48), "Back", backButtonHovered);
-        drawPrimaryButton(g, new Rectangle(622, 520, 130, 48), "Next");
+        drawFooter(g,"CHOOSE WORLD  >",HERO_NAMES[selectedCharacter]+" / "+SKILLS[selectedCharacter]);
     }
-
     private void drawMapPage(Graphics2D g) {
-        drawHeader(g, "Choose Your Map", "Select where your survival begins");
-        for (int index = 0; index < MAPS.length; index++) {
-            Rectangle card = mapCard(index);
-            boolean selected = index == selectedMap;
-            drawCard(g, card, selected, hoveredIndex == index);
-            int imageX = card.x + 8;
-            int imageY = card.y + 8;
-            int imageWidth = card.width - 16;
-            int imageHeight = 92;
-            g.drawImage(mapPreviews[index], imageX, imageY, imageWidth, imageHeight, null);
-            g.setColor(new Color(4, 10, 20, 185));
-            g.fillRect(imageX, imageY + imageHeight - 34, imageWidth, 34);
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("SansSerif", Font.BOLD, 17));
-            drawCentered(g, MAPS[index].name, card.x + card.width / 2, card.y + 117);
-            if (selected) {
-                drawBadge(g, card.x + card.width / 2 - 42, card.y + 125, "SELECTED");
+        drawHeader(g,"CHOOSE YOUR WORLD","Every path leads to a new fight.");
+        for(int i=0;i<MAPS.length;i++) {
+            Rectangle card=mapCard(i); boolean selected=selectedMap==i;
+            drawCard(g,card,selected,hoveredIndex==i);
+            cover(g,mapPreviews[i],card.x+8,card.y+8,card.width-16,82);
+            g.setColor(new Color(6,13,16,145)); g.fillRect(card.x+8,card.y+8,card.width-16,82);
+            text(g,MAPS[i].tagline,11,WHITE,card.x+19,card.y+32); text(g,"0"+(i+1),24,GOLD,card.x+19,card.y+72);
+            if(selected) {
+                g.setColor(GOLD); g.fillRect(card.x+card.width-98,card.y+16,80,19);
+                centered(g,"SELECTED",10,PANEL,card.x+card.width-58,card.y+30);
             }
+            text(g,MAPS[i].name.toUpperCase(),18,WHITE,card.x+16,card.y+116);
+            text(g,MAPS[i].description,11,MUTED,card.x+16,card.y+137);
         }
-        drawSecondaryButton(g, new Rectangle(48, 520, 130, 48), "Back", backButtonHovered);
-        drawPrimaryButton(g, new Rectangle(570, 520, 182, 48), "Start Adventure");
+        drawFooter(g,"START ADVENTURE  >",HERO_NAMES[selectedCharacter]+" / "+MAPS[selectedMap].name.toUpperCase());
     }
-
-    private void drawHeader(Graphics2D g, String title, String subtitle) {
-        g.setColor(new Color(5, 13, 26, 190));
-        g.fillRect(0, 0, DESIGN_WIDTH, 150);
-        g.setColor(GOLD);
-        g.setFont(new Font("SansSerif", Font.BOLD, 32));
-        drawCentered(g, title, DESIGN_WIDTH / 2, 62);
-        g.setColor(new Color(220, 229, 242));
-        g.setFont(new Font("SansSerif", Font.PLAIN, 16));
-        drawCentered(g, subtitle, DESIGN_WIDTH / 2, 98);
-        g.setColor(new Color(255, 255, 255, 160));
-        g.setFont(new Font("SansSerif", Font.BOLD, 13));
-        g.drawString(page == Page.PLAYER ? "01 / 02" : "02 / 02", DESIGN_WIDTH - 82, 38);
+    private void drawFooter(Graphics2D g,String primary,String summary) {
+        drawButton(g,backButton(),"< BACK",false,backButtonHovered); drawButton(g,primaryButton(),primary,true,primaryButtonHovered);
+        text(g,summary,11,GOLD,48,506); centered(g,"ARROWS TO SELECT / ENTER TO CONTINUE",9,MUTED,374,549);
     }
-
-    private void drawCard(Graphics2D g, Rectangle card, boolean selected, boolean hovered) {
-        g.setColor(selected ? new Color(29, 50, 75, 245) : PANEL);
-        g.fillRoundRect(card.x, card.y, card.width, card.height, 18, 18);
-        g.setColor(selected ? GOLD : (hovered ? new Color(161, 184, 213) : new Color(100, 122, 151)));
-        g.setStroke(new java.awt.BasicStroke(selected ? 3f : 1.2f));
-        g.drawRoundRect(card.x, card.y, card.width, card.height, 18, 18);
+    private void hero(Graphics2D g,int index,int centerX,int top,int height) {
+        BufferedImage frame=characterPreviews[index].frameAt(System.currentTimeMillis(),160);
+        int width=height*frame.getWidth()/frame.getHeight(); g.drawImage(frame,centerX-width/2,top-22,width,height,null);
     }
-
-    private void drawPrimaryButton(Graphics2D g, Rectangle bounds, String label) {
-        g.setColor(primaryButtonHovered ? new Color(255, 217, 117) : GOLD);
-        g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 16, 16);
-        g.setColor(new Color(39, 31, 20));
-        g.setFont(new Font("SansSerif", Font.BOLD, 19));
-        drawCentered(g, label, bounds.x + bounds.width / 2, bounds.y + 39);
+    private void drawCard(Graphics2D g,Rectangle r,boolean selected,boolean hover) {
+        g.setColor(new Color(0,0,0,110)); g.fillRect(r.x+4,r.y+5,r.width,r.height);
+        g.setColor(selected?new Color(34,34,28,245):PANEL); g.fillRect(r.x,r.y,r.width,r.height);
+        g.setColor(selected?GOLD:hover?WHITE:new Color(68,78,75)); g.drawRect(r.x,r.y,r.width,r.height);
+        if(selected) g.drawRect(r.x+2,r.y+2,r.width-4,r.height-4);
+        g.setColor(selected?GOLD:new Color(91,101,94)); g.fillRect(r.x,r.y,20,3);
     }
-
-    private void drawSecondaryButton(Graphics2D g, Rectangle bounds, String label, boolean hovered) {
-        g.setColor(hovered ? new Color(62, 83, 110, 240) : new Color(19, 31, 49, 220));
-        g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 14, 14);
-        g.setColor(new Color(214, 224, 239));
-        g.setStroke(new java.awt.BasicStroke(1.2f));
-        g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 14, 14);
-        g.setFont(new Font("SansSerif", Font.BOLD, 16));
-        drawCentered(g, label, bounds.x + bounds.width / 2, bounds.y + 30);
+    private void drawButton(Graphics2D g,Rectangle r,String label,boolean primary,boolean hover) {
+        g.setColor(new Color(0,0,0,150)); g.fillRect(r.x,r.y+4,r.width,r.height);
+        g.setColor(primary?(hover?new Color(255,219,150):GOLD):(hover?new Color(48,56,52):PANEL)); g.fillRect(r.x,r.y,r.width,r.height);
+        g.setColor(primary?new Color(255,231,172):new Color(92,107,94)); g.drawRect(r.x+2,r.y+2,r.width-4,r.height-4);
+        centered(g,label,primary&&page==Page.START?20:13,primary?PANEL:WHITE,r.x+r.width/2,r.y+r.height/2+5);
     }
-
-    private void drawBadge(Graphics2D g, int x, int y, String label) {
-        g.setColor(new Color(255, 199, 74, 45));
-        g.fillRoundRect(x, y, 84, 24, 12, 12);
-        g.setColor(GOLD);
-        g.setFont(new Font("SansSerif", Font.BOLD, 12));
-        drawCentered(g, label, x + 42, y + 17);
-    }
-
     private Rectangle playerCard(int index) {
-        int cardWidth = 220;
-        int gap = 24;
-        int startX = (DESIGN_WIDTH - (cardWidth * CHARACTERS.length + gap * (CHARACTERS.length - 1))) / 2;
-        return new Rectangle(startX + index * (cardWidth + gap), 185, cardWidth, 280);
+        int width=220,gap=24,startX=(800-(width*CHARACTERS.length+gap*(CHARACTERS.length-1)))/2;
+        return new Rectangle(startX+index*(width+gap),185,width,280);
     }
-
-    private Rectangle mapCard(int index) {
-        int columns = Math.min(3, (MAPS.length + 1) / 2);
-        int row = index / columns;
-        int rowCount = Math.min(columns, MAPS.length - row * columns);
-        int width = 210;
-        int gap = 25;
-        int startX = (DESIGN_WIDTH - (width * rowCount + gap * (rowCount - 1))) / 2;
-        return new Rectangle(startX + index % columns * (width + gap), 170 + row * 165, width, 155);
+    private Rectangle mapCard(int index) { return new Rectangle(64+index%2*346,170+index/2*165,326,155); }
+    private Rectangle primaryButton() { return page==Page.START?new Rectangle(295,390,210,62):new Rectangle(570,520,182,48); }
+    private Rectangle backButton() { return new Rectangle(48,520,130,48); }
+    private void handleClick(int x,int y) {
+        if(launching) return; requestFocusInWindow();
+        if(primaryButton().contains(x,y)) advance();
+        else if(page!=Page.START&&backButton().contains(x,y)) back();
+        else if(page==Page.PLAYER) { for(int i=0;i<CHARACTERS.length;i++) if(playerCard(i).contains(x,y)) select(i); }
+        else if(page==Page.MAP) { for(int i=0;i<MAPS.length;i++) if(mapCard(i).contains(x,y)) select(i); }
+        updateHover(x,y);
     }
-
-    private void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {
-        FontMetrics metrics = g.getFontMetrics();
-        g.drawString(text, centerX - metrics.stringWidth(text) / 2, baselineY);
+    private void advance() {
+        if(launching) return; SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
+        if(page==Page.START) page=Page.PLAYER; else if(page==Page.PLAYER) page=Page.MAP;
+        else { launching=true; animationTimer.stop(); onGameStart.accept(CHARACTERS[selectedCharacter],MAPS[selectedMap].resource); }
+        resetHover(); repaint();
     }
-
-    private void handleClick(int x, int y) {
-        if (page == Page.START) {
-            if (new Rectangle(295, 390, 210, 62).contains(x, y)) {
-                page = Page.PLAYER;
-                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
-            }
-        } else if (page == Page.PLAYER) {
-            for (int index = 0; index < CHARACTERS.length; index++) {
-                if (playerCard(index).contains(x, y)) {
-                    selectedCharacter = index;
-                    SoundEffects.play(SoundEffects.Effect.SELECT);
-                    break;
-                }
-            }
-            if (new Rectangle(48, 520, 130, 48).contains(x, y)) {
-                page = Page.START;
-                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
-            } else if (new Rectangle(622, 520, 130, 48).contains(x, y)) {
-                page = Page.MAP;
-                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
-            }
-        } else {
-            for (int index = 0; index < MAPS.length; index++) {
-                Rectangle card = mapCard(index);
-                if (card.contains(x, y)) {
-                    selectedMap = index;
-                    SoundEffects.play(SoundEffects.Effect.SELECT);
-                    break;
-                }
-            }
-            if (new Rectangle(48, 520, 130, 48).contains(x, y)) {
-                page = Page.PLAYER;
-                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
-            } else if (new Rectangle(570, 520, 182, 48).contains(x, y)) {
-                MapOption map = MAPS[selectedMap];
-                SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
-                animationTimer.stop();
-                onGameStart.accept(CHARACTERS[selectedCharacter], map.resource);
-            }
-        }
-        updateHover(x, y);
-        repaint();
+    private void back() {
+        if(launching||page==Page.START) return; page=page==Page.MAP?Page.PLAYER:Page.START;
+        SoundEffects.play(SoundEffects.Effect.MENU_CLICK); resetHover(); repaint();
     }
-
-    private void updateHover(int x, int y) {
-        hoveredIndex = -1;
-        primaryButtonHovered = false;
-        backButtonHovered = false;
-        if (page == Page.PLAYER) {
-            for (int index = 0; index < CHARACTERS.length; index++) {
-                if (playerCard(index).contains(x, y)) {
-                    hoveredIndex = index;
-                }
-            }
-            primaryButtonHovered = new Rectangle(622, 520, 130, 48).contains(x, y);
-            backButtonHovered = new Rectangle(48, 520, 130, 48).contains(x, y);
-        } else if (page == Page.MAP) {
-            for (int index = 0; index < MAPS.length; index++) {
-                Rectangle card = mapCard(index);
-                if (card.contains(x, y)) {
-                    hoveredIndex = index;
-                }
-            }
-            primaryButtonHovered = new Rectangle(570, 520, 182, 48).contains(x, y);
-            backButtonHovered = new Rectangle(48, 520, 130, 48).contains(x, y);
-        } else {
-            primaryButtonHovered = new Rectangle(295, 390, 210, 62).contains(x, y);
-        }
-        setCursor(Cursor.getPredefinedCursor(
-                hoveredIndex >= 0 || primaryButtonHovered || backButtonHovered
-                        ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
-        repaint();
+    private void selectBy(int delta) {
+        if(page==Page.START||launching) return;
+        int count=page==Page.PLAYER?CHARACTERS.length:MAPS.length,current=page==Page.PLAYER?selectedCharacter:selectedMap;
+        select(Math.floorMod(current+delta,count));
     }
-
-    private int toDesignX(int x) {
-        return x * DESIGN_WIDTH / Math.max(1, getWidth());
+    private void select(int index) {
+        if(page==Page.PLAYER) selectedCharacter=index; else selectedMap=index;
+        SoundEffects.play(SoundEffects.Effect.SELECT); repaint();
     }
-
-    private int toDesignY(int y) {
-        return y * DESIGN_HEIGHT / Math.max(1, getHeight());
+    private void resetHover() {
+        hoveredIndex=-1; primaryButtonHovered=false; backButtonHovered=false; setCursor(Cursor.getDefaultCursor());
     }
-
-    private static BufferedImage loadImage(String resourcePath) {
-        try {
-            var resource = GameStartScreen.class.getResource(resourcePath);
-            if (resource == null) {
-                throw new IllegalStateException("Unable to find menu image: " + resourcePath);
-            }
-            BufferedImage image = ImageIO.read(resource);
-            if (image == null) {
-                throw new IllegalStateException("Unsupported menu image: " + resourcePath);
-            }
-            return image;
-        } catch (IOException exception) {
-            throw new IllegalStateException("Unable to load menu image: " + resourcePath, exception);
-        }
+    private void updateHover(int x,int y) {
+        hoveredIndex=-1;
+        if(page==Page.PLAYER) { for(int i=0;i<CHARACTERS.length;i++) if(playerCard(i).contains(x,y)) hoveredIndex=i; }
+        else if(page==Page.MAP) { for(int i=0;i<MAPS.length;i++) if(mapCard(i).contains(x,y)) hoveredIndex=i; }
+        primaryButtonHovered=primaryButton().contains(x,y); backButtonHovered=page!=Page.START&&backButton().contains(x,y);
+        setCursor(Cursor.getPredefinedCursor(hoveredIndex>=0||primaryButtonHovered||backButtonHovered?Cursor.HAND_CURSOR:Cursor.DEFAULT_CURSOR)); repaint();
     }
-
+    private int toDesignX(int x) { return x*800/Math.max(1,getWidth()); }
+    private int toDesignY(int y) { return y*600/Math.max(1,getHeight()); }
+    private static void text(Graphics2D g,String text,int size,Color color,int x,int y) {
+        g.setFont(PIXEL_FONT.deriveFont((float)size)); g.setColor(color); g.drawString(text,x,y);
+    }
+    private static void centered(Graphics2D g,String text,int size,Color color,int x,int y) {
+        g.setFont(PIXEL_FONT.deriveFont((float)size)); text(g,text,size,color,x-g.getFontMetrics().stringWidth(text)/2,y);
+    }
+    private static void rightText(Graphics2D g,String text,int size,Color color,int x,int y) {
+        g.setFont(PIXEL_FONT.deriveFont((float)size)); text(g,text,size,color,x-g.getFontMetrics().stringWidth(text),y);
+    }
+    private static void title(Graphics2D g,String text,int size,int x,int y,Color color) {
+        centered(g,text,size,new Color(0,0,0,170),x+4,y+5); centered(g,text,size,RED,x+2,y+2); centered(g,text,size,color,x,y);
+    }
+    private static void cover(Graphics2D g,BufferedImage image,int x,int y,int width,int height) {
+        double scale=Math.max(width/(double)image.getWidth(),height/(double)image.getHeight());
+        int sw=Math.min(image.getWidth(),(int)Math.round(width/scale)),sh=Math.min(image.getHeight(),(int)Math.round(height/scale));
+        int sx=(image.getWidth()-sw)/2,sy=(image.getHeight()-sh)/2;
+        g.drawImage(image,x,y,x+width,y+height,sx,sy,sx+sw,sy+sh,null);
+    }
+    private static Font loadFont() {
+        try(var stream=GameStartScreen.class.getResourceAsStream("/project/game/fonts/boldpixels.ttf")) {
+            if(stream!=null) return Font.createFont(Font.TRUETYPE_FONT,stream);
+        } catch(IOException|FontFormatException e) { System.err.println("Unable to load BoldPixels: "+e.getMessage()); }
+        return new Font("Monospaced",Font.BOLD,16);
+    }
+    private static BufferedImage loadImage(String path) {
+        var resource=GameStartScreen.class.getResource(path); if(resource==null) throw new IllegalStateException("Missing menu image: "+path);
+        try { BufferedImage image=ImageIO.read(resource); if(image==null) throw new IllegalStateException("Invalid menu image: "+path); return image; }
+        catch(IOException e) { throw new IllegalStateException("Unable to load menu image: "+path,e); }
+    }
     private static final class MapOption {
-        private final String name;
-        private final String resource;
-
-        private MapOption(String name, String resource) {
-            this.name = name;
-            this.resource = resource;
+        private final String name,resource,tagline,description;
+        private MapOption(String name,String resource,String tagline,String description) {
+            this.name=name; this.resource=resource; this.tagline=tagline; this.description=description;
         }
     }
 }

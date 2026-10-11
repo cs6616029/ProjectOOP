@@ -73,6 +73,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private boolean gameOver = false;
     private boolean gameWon;
     private boolean paused;
+    private int pauseHoveredButton = -1;
     private int bossesDefeated;
     private int score = 0;
 
@@ -121,11 +122,35 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 }
             }
         });
+        MouseAdapter pauseHover = new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                synchronized (VampireSurvivorsGame.this) {
+                    pauseHoveredButton = !paused ? -1 : resumeButtonBounds().contains(event.getPoint()) ? 0
+                            : restartButtonBounds().contains(event.getPoint()) ? 1
+                            : mainMenuButtonBounds().contains(event.getPoint()) ? 2 : -1;
+                    setCursor(java.awt.Cursor.getPredefinedCursor(pauseHoveredButton >= 0
+                            ? java.awt.Cursor.HAND_CURSOR : java.awt.Cursor.DEFAULT_CURSOR));
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent event) {
+                synchronized (VampireSurvivorsGame.this) {
+                    pauseHoveredButton = -1;
+                    setCursor(java.awt.Cursor.getDefaultCursor());
+                }
+            }
+        };
+        addMouseMotionListener(pauseHover);
+        addMouseListener(pauseHover);
         initGame();
     }
 
     private synchronized void initGame() {
         paused = false;
+        pauseHoveredButton = -1;
+        setCursor(java.awt.Cursor.getDefaultCursor());
         SoundEffects.stop(SoundEffects.Effect.WALKING);
         player = new Player(0, 0, characterType);
         enemies.clear();
@@ -536,28 +561,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 drawCentered(g, "Press 'R' to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 72);
             }
         } else {
-            g.setColor(new Color(8, 17, 31, 210));
-            g.fillRoundRect(SCREEN_WIDTH - 108, 16, 88, 34, 10, 10);
-            g.setColor(Color.WHITE);
-            g.drawRoundRect(SCREEN_WIDTH - 108, 16, 88, 34, 10, 10);
-            g.setFont(new Font("SansSerif", Font.BOLD, 14));
-            drawCentered(g, "PAUSE", SCREEN_WIDTH - 64, 38);
+            PauseMenuOverlay.drawButton(g, pauseButtonBounds(), "PAUSE", false, false);
         }
     }
 
     private void drawPauseMenu(Graphics2D g) {
-        g.setColor(new Color(0, 0, 0, 190));
-        g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-        g.setColor(new Color(8, 17, 31, 245));
-        g.fillRoundRect(270, 165, 360, 365, 24, 24);
-        g.setColor(new Color(255, 199, 74));
-        g.setStroke(new java.awt.BasicStroke(2));
-        g.drawRoundRect(270, 165, 360, 365, 24, 24);
-        g.setFont(new Font("SansSerif", Font.BOLD, 38));
-        drawCentered(g, "PAUSED", SCREEN_WIDTH / 2, 225);
-        drawPauseButton(g, resumeButtonBounds(), "Resume");
-        drawPauseButton(g, restartButtonBounds(), "Restart");
-        drawPauseButton(g, mainMenuButtonBounds(), "Main Menu");
+        PauseMenuOverlay.draw(g, SCREEN_WIDTH, SCREEN_HEIGHT, levelManager.getLevel(), elapsedSeconds, score,
+                resumeButtonBounds(), restartButtonBounds(), mainMenuButtonBounds(), pauseHoveredButton);
     }
 
     private void drawPauseButton(Graphics2D g, Rectangle bounds, String label) {
@@ -598,6 +608,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     private void setPaused(boolean paused) {
         this.paused = paused;
+        pauseHoveredButton = -1;
+        setCursor(java.awt.Cursor.getDefaultCursor());
         activeKeys.clear();
         SoundEffects.stop(SoundEffects.Effect.WALKING);
         lastUpdateNanos = System.nanoTime();

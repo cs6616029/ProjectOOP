@@ -28,6 +28,7 @@ final class BossSkill {
     private boolean warning, charging;
     private double originX, originY, angle;
     private long lastUpdate;
+    private int ogreFootOffset;
 
     BossSkill(Kind kind) { this.kind = kind; }
 
@@ -78,6 +79,7 @@ final class BossSkill {
             releaseTime = time + kind.windup;
             originX = boss.x;
             originY = boss.y;
+            ogreFootOffset = boss.size / 2;
             angle = Math.atan2(player.y - boss.y, player.x - boss.x);
         }
     }
@@ -88,10 +90,13 @@ final class BossSkill {
         int sx = (int) (originX - camX), sy = (int) (originY - camY);
         g.setColor(new Color(255, 80, 40, 65));
         if (kind == Kind.OGRE) {
-            g.fillOval(sx - 200, sy - 200, 400, 400);
+            int radius = BossAttack.OGRE_SLAM_RADIUS;
+            int halfHeight = (int) Math.round(radius * BossAttack.OGRE_SLAM_HEIGHT_SCALE);
+            int groundY = sy + ogreFootOffset;
+            g.fillOval(sx - radius, groundY - halfHeight, radius * 2, halfHeight * 2);
             g.setColor(Color.ORANGE);
             g.setStroke(new BasicStroke(3));
-            g.drawOval(sx - 200, sy - 200, 400, 400);
+            g.drawOval(sx - radius, groundY - halfHeight, radius * 2, halfHeight * 2);
         } else {
             int rays = kind == Kind.SKELETON ? 8 : (kind == Kind.DRAGON ? 3 : 1);
             g.setStroke(new BasicStroke(kind == Kind.CHARGER ? 250

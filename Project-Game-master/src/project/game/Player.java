@@ -105,7 +105,7 @@ public class Player {
         spriteScale = switch (characterType) {
             case SURVIVOR -> 1.25;
             case STRONG_BOY -> 1.5;
-            case IRON_GUARDIAN -> 1.0;
+            case IRON_GUARDIAN -> 1.25;
         };
         idleSprite = SpriteAnimation.load(characterType.getIdleSpriteResource(), WALK_FRAME_COUNT);
         walkSprite = SpriteAnimation.load(characterType.getWalkSpriteResource(), WALK_FRAME_COUNT);

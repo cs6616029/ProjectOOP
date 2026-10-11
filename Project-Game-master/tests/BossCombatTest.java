@@ -50,9 +50,10 @@ public final class BossCombatTest {
             graphics.dispose();
             BufferedImage expected = new BufferedImage(420, 420, BufferedImage.TYPE_INT_ARGB);
             graphics = expected.createGraphics();
-            int height = 400 * smokeSheet.getHeight() / 64;
+            int width = BossAttack.OGRE_SLAM_RADIUS * 2;
+            int height = (int) Math.round(width * BossAttack.OGRE_SLAM_HEIGHT_SCALE);
             graphics.drawImage(smokeSheet.getSubimage(frameIndex * 64, 0, 64, smokeSheet.getHeight()),
-                    10, 210 - height / 2, 400, height, null);
+                    210 - width / 2, 210 + previewDragon.size / 2 - height / 2, width, height, null);
             graphics.dispose();
             check(java.util.Arrays.equals(actual.getRGB(0, 0, 420, 420, null, 0, 420),
                     expected.getRGB(0, 0, 420, 420, null, 0, 420)), "Ogre smoke plays supplied frame " + frameIndex);
@@ -98,7 +99,8 @@ public final class BossCombatTest {
             var g = warning.createGraphics();
             boss.drawBossWarning(g, -450, -337);
             g.dispose();
-            check(warning.getRGB(460, 337) != 0, kind + " must draw warning area");
+            check(warning.getRGB(460, kind == BossSkill.Kind.OGRE ? 337 + boss.size / 2 : 337) != 0,
+                    kind + " must draw warning area at the attack location");
             long release = 3500 + kind.windup;
             boss.updateBossSkill(target, attacks, release);
             switch (kind) {
@@ -126,6 +128,17 @@ public final class BossCombatTest {
                     target.x = 150;
                     check(slam.update(target, release) == 16 && slam.update(target, release + 10) == 0,
                             "Slam hits once inside its radius");
+                    target.x = 280;
+                    target.y = boss.size / 2.0 - target.getRenderSize() / 2.0;
+                    check(BossAttack.slam(boss, 0, 0, release).update(target, release) == 16,
+                            "Expanded ground slam hits at the wider edge");
+                    target.x = 301;
+                    check(BossAttack.slam(boss, 0, 0, release).update(target, release) == 0,
+                            "Outside the wider ground slam is safe");
+                    target.x = 0;
+                    target.y += 132;
+                    check(BossAttack.slam(boss, 0, 0, release).update(target, release) == 0,
+                            "Damage stays within the shallow ground ellipse");
                     break;
                 case SKELETON:
                     check(attacks.size() == 8, "Skeleton fires eight radial sword waves");

@@ -42,6 +42,7 @@ public class GunWeapon extends Weapon {
     }
 
     private static class Bullet {
+        final ShotBurst burst;
         double x, y, dirX, dirY;
         double speed = 12.0;
         int damage = 15;
@@ -49,7 +50,8 @@ public class GunWeapon extends Weapon {
         final long spawnedAt;
         long animationTime;
 
-        Bullet(double x, double y, double dirX, double dirY, int damage, long spawnedAt) {
+        Bullet(double x, double y, double dirX, double dirY, int damage, long spawnedAt, ShotBurst burst) {
+            this.burst = burst;
             this.x = x;
             this.y = y;
             this.dirX = dirX;
@@ -63,6 +65,11 @@ public class GunWeapon extends Weapon {
             x += dirX * speed;
             y += dirY * speed;
         }
+    }
+
+    private static class ShotBurst {
+        Enemy firstEnemy;
+        double impactX, impactY;
     }
 
     private static double contactTime(double startX, double startY, double endX, double endY, Enemy enemy) {
@@ -98,12 +105,13 @@ public class GunWeapon extends Weapon {
                     double dirX = dx / len;
                     double dirY = dy / len;
                     int dmg = getDamage();
+                    ShotBurst burst = new ShotBurst();
 
                     // นัดที่ 1
-                    bullets.add(new Bullet(player.x, player.y, dirX, dirY, dmg, currentTime));
+                    bullets.add(new Bullet(player.x, player.y, dirX, dirY, dmg, currentTime, burst));
                     
                     // นัดที่ 2 (ยิงเหลื่อมออกมานิดหน่อย)
-                    bullets.add(new Bullet(player.x - dirX * 15, player.y - dirY * 15, dirX, dirY, dmg, currentTime));
+                    bullets.add(new Bullet(player.x - dirX * 15, player.y - dirY * 15, dirX, dirY, dmg, currentTime, burst));
                 }
             }
             lastAttackTime = currentTime;
@@ -119,8 +127,10 @@ public class GunWeapon extends Weapon {
             // ชนศัตรู
             Enemy firstHit = null;
             double firstContact = Double.POSITIVE_INFINITY;
-            for (Enemy enemy : enemies) {
-                if (enemy.hp > 0) {
+            // Following bullets keep the first impact as their stop, even after that enemy is removed.
+            List<Enemy> collisionTargets = b.burst.firstEnemy == null ? enemies : List.of(b.burst.firstEnemy);
+            for (Enemy enemy : collisionTargets) {
+                if (enemy.hp > 0 || enemy == b.burst.firstEnemy) {
                     double contact = contactTime(previousX, previousY, b.x, b.y, enemy);
                     if (contact < firstContact) {
                         firstContact = contact;
@@ -128,11 +138,30 @@ public class GunWeapon extends Weapon {
                     }
                 }
             }
+            if (b.burst.firstEnemy != null) {
+                double stopTime = ((b.burst.impactX - previousX) * b.dirX
+                        + (b.burst.impactY - previousY) * b.dirY) / b.speed;
+                if (stopTime <= 1 && stopTime < firstContact) {
+                    firstHit = null;
+                    b.active = false;
+                }
+            }
             if (firstHit != null) {
                 b.x = previousX + (b.x - previousX) * firstContact;
                 b.y = previousY + (b.y - previousY) * firstContact;
-                firstHit.hp -= b.damage;
-                visualEffects.add(VisualEffect.bulletHit(b.x, b.y));
+                if (b.burst.firstEnemy == null) {
+                    b.burst.firstEnemy = firstHit;
+                    b.burst.impactX = b.x;
+                    b.burst.impactY = b.y;
+                }
+                if (firstHit.hp > 0) {
+                    firstHit.hp -= b.damage;
+                    visualEffects.add(VisualEffect.bulletHit(b.x, b.y));
+                }
+                b.active = false;
+            } else if (b.burst.firstEnemy != null
+                    && (b.x - b.burst.impactX) * b.dirX + (b.y - b.burst.impactY) * b.dirY >= 0) {
+                // If the first enemy moves away, the rest of the burst still cannot pass the impact point.
                 b.active = false;
             }
 

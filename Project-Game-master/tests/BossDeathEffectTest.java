@@ -57,10 +57,9 @@ public class BossDeathEffectTest {
 
         VisualEffect effect = VisualEffect.bossDeath(100, 200, 250);
         int size = effect.radius * 2;
-        int[] order = {1, 6, 2, 3, 4, 5};
-        for (int tick = 0; tick < 36; tick++) {
-            BufferedImage frame = ImageIO.read(BossDeathEffectTest.class.getResource(
-                    "/project/game/effects/boss-death/" + order[tick / 6] + ".png"));
+        BufferedImage bossSheet = ImageIO.read(BossDeathEffectTest.class.getResource("/project/game/effects/boss-death.png"));
+        for (int tick = 0; tick < 44; tick++) {
+            BufferedImage frame = bossSheet.getSubimage(tick / 4 * 64, 0, 64, 64);
             BufferedImage expected = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
             var g = expected.createGraphics();
             g.drawImage(frame, 0, 0, size, size, null);
@@ -99,6 +98,6 @@ public class BossDeathEffectTest {
                     "Regular death effect finishes after one playback");
         }
         System.out.println("PASS: normal, fast and tank death triggers and all nine yellow explosion frames");
-        System.out.println("PASS: all boss death triggers, rewards, six supplied frames and one-shot playback");
+        System.out.println("PASS: all boss death triggers, rewards, eleven supplied frames and one-shot playback");
     }
 }

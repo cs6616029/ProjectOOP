@@ -10,6 +10,8 @@ import java.util.List;
 final class BossAttack {
     static final int SWORD_WAVE_WIDTH = 160;
     static final int SWORD_WAVE_RADIUS = 56;
+    static final int OGRE_SLAM_RADIUS = 260;
+    static final double OGRE_SLAM_HEIGHT_SCALE = 0.35;
     private static final int SLAM_FRAME_COUNT = 11;
     private static final int SLAM_FRAME_DURATION = 45;
     private final Enemy owner;
@@ -73,7 +75,8 @@ final class BossAttack {
     }
 
     static BossAttack slam(Enemy owner, double x, double y, long time) {
-        return new BossAttack(owner, x, y, 0, 0, 200, 16, Color.ORANGE, time, true, false);
+        return new BossAttack(owner, x, y + owner.size / 2.0, 0, 0,
+                OGRE_SLAM_RADIUS, 16, Color.ORANGE, time, true, false);
     }
 
     int update(Player player, long time) {
@@ -90,7 +93,10 @@ final class BossAttack {
             lastUpdateTime = time;
             if (impactChecked) return 0;
             impactChecked = true;
-            return Math.hypot(player.x - x, player.y - y) <= radius + player.size / 2.0 ? damage : 0;
+            double dx = (player.x - x) / (radius + player.size / 2.0);
+            double dy = (player.y + player.getRenderSize() / 2.0 - y)
+                    / (radius * OGRE_SLAM_HEIGHT_SCALE + player.size / 2.0);
+            return dx * dx + dy * dy <= 1 ? damage : 0;
         }
         double oldX = x, oldY = y;
         double seconds = Math.max(0, time - lastUpdateTime) / 1000.0;
@@ -120,7 +126,7 @@ final class BossAttack {
         if (slam) {
             BufferedImage frame = OgreSlamAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, SLAM_FRAME_DURATION);
             int width = radius * 2;
-            int height = width * frame.getHeight() / frame.getWidth();
+            int height = (int) Math.round(width * OGRE_SLAM_HEIGHT_SCALE);
             g.drawImage(frame, sx - width / 2, sy - height / 2, width, height, null);
             g.dispose();
             return;

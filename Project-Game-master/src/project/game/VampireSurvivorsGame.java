@@ -54,6 +54,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     private final LevelManager levelManager = new LevelManager();
     private LevelUpEffect levelUpEffect;
+    private XPPickupEffect xpPickupEffect;
     private int displayedLevel = 1;
 
     private long gameStartTime;
@@ -134,6 +135,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         levelManager.reset();
         levelUpEffect = null;
+        xpPickupEffect = null;
         displayedLevel = 1;
 
         int primaryWeaponIndex = characterType.getPrimaryWeaponIndex();
@@ -322,6 +324,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
             if (gem.getBounds().intersects(player.getBounds())) {
                 levelManager.gainXP(gem.xpValue, player, weapons, passiveItems);
+                xpPickupEffect = new XPPickupEffect(System.nanoTime());
                 SoundEffects.play(SoundEffects.Effect.PICKUP);
                 gIt.remove();
                 if (levelManager.isLevelUping()) {
@@ -414,6 +417,11 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (VisualEffect ve : visualEffects) ve.draw(dbg, cameraX, cameraY);
 
         player.draw(dbg, cameraX, cameraY);
+        if (xpPickupEffect != null) {
+            long pickupTime = System.nanoTime();
+            if (gameOver || xpPickupEffect.isFinished(pickupTime)) xpPickupEffect = null;
+            else xpPickupEffect.draw(dbg, player, cameraX, cameraY, pickupTime);
+        }
         drawUI(dbg);
         long presentationTime = System.nanoTime();
         int level = levelManager.getLevel();

@@ -55,6 +55,34 @@ public final class GunCollisionTest {
             gun.update(player, enemies, effects, 10032);
             check(behind.hp == 1000 && effects.size() == 1, "Consumed bullet cannot hit another enemy");
         }
-        System.out.println("PASS: non-piercing bullets, nearest contact, swept collisions and eight firing directions");
+        for (int direction = 0; direction < 8; direction++) {
+            double angle = direction * Math.PI / 4;
+            double dx = Math.cos(angle), dy = Math.sin(angle);
+            Player player = new Player(0, 0);
+            GunWeapon gun = new GunWeapon(1);
+            Enemy front = enemy(dx * 50, dy * 50);
+            front.hp = 1;
+            Enemy behind = enemy(dx * 80, dy * 80);
+            List<Enemy> enemies = new ArrayList<>(List.of(behind, front));
+            List<VisualEffect> effects = new ArrayList<>();
+            for (int tick = 0; tick < 20; tick++) {
+                gun.update(player, enemies, effects, 10000 + tick * 16);
+                enemies.removeIf(enemy -> enemy.hp <= 0);
+            }
+            check(front.hp <= 0 && behind.hp == 1000, "Second bullet must stop after first bullet kills front enemy");
+            check(((List<?>) get(gun, "bullets")).isEmpty(), "Both burst bullets are consumed at first enemy");
+            check(effects.size() == 1, "Stopping at a dead enemy must not duplicate hit effects");
+        }
+        Player player = new Player(0, 0);
+        GunWeapon gun = new GunWeapon(1);
+        Enemy front = enemy(50, 0), behind = enemy(80, 0);
+        List<VisualEffect> effects = new ArrayList<>();
+        for (int tick = 0; tick < 20; tick++) gun.update(player, List.of(behind, front), effects, 10000 + tick * 16);
+        check(front.hp == 972 && behind.hp == 1000 && effects.size() == 2,
+                "A surviving first enemy receives both bullets and full burst damage");
+        gun.update(player, List.of(behind), effects, 11000);
+        for (int tick = 1; tick < 20; tick++) gun.update(player, List.of(behind), effects, 11000 + tick * 16);
+        check(behind.hp == 972, "Next burst can target a different enemy");
+        System.out.println("PASS: non-piercing bursts, killing front enemy, full burst damage and eight firing directions");
     }
 }

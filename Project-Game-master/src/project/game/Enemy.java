@@ -112,6 +112,19 @@ public class Enemy {
         return sprite == FAST_SPRITES[1];
     }
 
+    SoundEffects.Effect deathSound() {
+        if (type == EnemyType.BOSS) return switch (bossSkill.kind) {
+            case DRAGON -> SoundEffects.Effect.DRAGON_DEATH;
+            case SKELETON -> SoundEffects.Effect.SKELETON_DEATH;
+            default -> SoundEffects.Effect.BOSS_DEATH;
+        };
+        if (type == EnemyType.TANK) return SoundEffects.Effect.CRAB_DEATH;
+        if (sprite == NORMAL_SPRITES[0]) return SoundEffects.Effect.SLIME_DEATH;
+        if (sprite == NORMAL_SPRITES[1] || sprite == FAST_SPRITES[0]) return SoundEffects.Effect.DOG_DEATH;
+        if (sprite == NORMAL_SPRITES[4]) return SoundEffects.Effect.GOBLIN_DEATH;
+        return SoundEffects.Effect.ENEMY_DEATH;
+    }
+
     public Enemy(double x, double y, EnemyType type, int playerLevel) {
         this(x, y, type, playerLevel, null);
     }

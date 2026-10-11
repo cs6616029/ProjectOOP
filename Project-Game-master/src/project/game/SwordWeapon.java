@@ -18,6 +18,21 @@ public class SwordWeapon extends Weapon {
     private final long attackDuration = SLASH_ANIMATION.getDurationMillis();
     private double attackRadius = 90;
     private double attackAngle;
+    private boolean goldenSlash, goldenAttack;
+    private static final class GoldenAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/golden-sword-slash.png", 5);
+    }
+
+    void setGoldenSlash(boolean enabled) { goldenSlash = enabled; }
+
+    static boolean hasMaxedLoadout(List<Weapon> weapons, List<PassiveItem> passives) {
+        return weapons.stream().filter(w -> w.getLevel() > 0).count() == 3
+                && weapons.stream().allMatch(w -> w.getLevel() == 0 || w.getLevel() == 5)
+                && passives.size() == PassiveItem.ItemType.values().length
+                && passives.stream().allMatch(p -> p.getLevel() == p.getMaxLevel());
+    }
+
+    private long currentAttackDuration() { return goldenAttack ? 300 : attackDuration; }
 
     public SwordWeapon(int level) {
         super("Sword", "Slashes in an arc in front of the player", level, 28, 10);
@@ -64,11 +79,12 @@ public class SwordWeapon extends Weapon {
             }
 
             isAttacking = true;
+            goldenAttack = goldenSlash;
             attackStartTime = currentTime;
             lastAttackTime = currentTime;
         }
 
-        if (isAttacking && currentTime - attackStartTime > attackDuration) {
+        if (isAttacking && currentTime - attackStartTime >= currentAttackDuration()) {
             isAttacking = false;
         }
     }
@@ -78,9 +94,9 @@ public class SwordWeapon extends Weapon {
         if (level <= 0 || !isAttacking) return;
 
         long elapsed = animationTime - attackStartTime;
-        if (elapsed < 0 || elapsed > attackDuration) return;
+        if (elapsed < 0 || elapsed >= currentAttackDuration()) return;
 
-        BufferedImage frame = SLASH_ANIMATION.frameAt(elapsed);
+        BufferedImage frame = goldenAttack ? GoldenAnimation.SPRITE.frameAt(elapsed, 60) : SLASH_ANIMATION.frameAt(elapsed);
         double renderWidth = attackRadius * 2.4;
         double renderHeight = renderWidth * frame.getHeight() / frame.getWidth();
         double centerX = player.x - camX + Math.cos(attackAngle) * attackRadius * 0.25;
@@ -91,6 +107,10 @@ public class SwordWeapon extends Weapon {
         transform.rotate(attackAngle);
         transform.scale(renderWidth / frame.getWidth(), renderHeight / frame.getHeight());
         transform.translate(-frame.getWidth() / 2.0, -frame.getHeight() / 2.0);
-        g.drawImage(frame, transform, null);
+        Graphics2D slash = (Graphics2D) g.create();
+        if (goldenAttack) slash.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        slash.drawImage(frame, transform, null);
+        slash.dispose();
     }
 }

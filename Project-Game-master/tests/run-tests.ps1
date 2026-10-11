@@ -31,6 +31,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Tornado checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Strong Boy punch checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.AuraCooldownTest
 if ($LASTEXITCODE -ne 0) { throw 'Aura cooldown checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.GoldenSwordTest
+if ($LASTEXITCODE -ne 0) { throw 'Golden sword checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.SoundFeedbackTest
+if ($LASTEXITCODE -ne 0) { throw 'Sound feedback checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.MapMusicTest
+if ($LASTEXITCODE -ne 0) { throw 'Map music checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.EnemyDeathSoundTest
+if ($LASTEXITCODE -ne 0) { throw 'Enemy death sound checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.WeaponScalingTest
 if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LaserTravelTest

@@ -36,6 +36,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private BufferedImage dbImage;
     private Graphics2D dbg;
     private final BufferedImage mapBackground;
+    private final MapMusic mapMusic;
     private final Player.CharacterType characterType;
     private final Runnable onReturnToMenu;
 
@@ -93,6 +94,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         this.characterType = characterType;
         this.onReturnToMenu = onReturnToMenu;
         mapBackground = loadMapBackground(mapBackgroundResource);
+        mapMusic = new MapMusic(mapBackgroundResource);
         setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         setFocusable(true);
         requestFocus();
@@ -213,11 +215,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         elapsedSeconds = 0;
         lastBossSpawnMinute = 0;
         nextBossSpawnSeconds = SpawnBalance.FIRST_BOSS_SECONDS;
+        if (running) mapMusic.start();
     }
 
     public synchronized void startGameThread() {
         if (gameThread == null || !running) {
             running = true;
+            mapMusic.start();
             gameThread = new Thread(this);
             gameThread.start();
         }
@@ -248,6 +252,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 }
             }
         }
+        mapMusic.stop();
     }
 
     private synchronized void updateGame() {
@@ -255,11 +260,13 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         long deltaNanos = Math.max(0L, nowNanos - lastUpdateNanos);
         lastUpdateNanos = nowNanos;
         if (gameOver || gameWon || paused || levelManager.isLevelUping()) {
+            if (gameOver || gameWon) mapMusic.stop(); else mapMusic.pause();
             SoundEffects.stop(SoundEffects.Effect.WALKING);
             return;
         }
 
         activeTimeNanos += deltaNanos;
+        mapMusic.resume();
         gameTimeMillis = gameStartTime + activeTimeNanos / 1_000_000L;
         player.gameTimeMillis = gameTimeMillis;
         elapsedSeconds = (gameTimeMillis - gameStartTime) / 1000;
@@ -282,7 +289,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             number.update();
             return number.isFinished();
         });
+        boolean goldenSword = characterType == Player.CharacterType.SURVIVOR
+                && SwordWeapon.hasMaxedLoadout(weapons, passiveItems);
         for (Weapon weapon : weapons) {
+            if (weapon instanceof SwordWeapon) ((SwordWeapon) weapon).setGoldenSlash(goldenSword);
             weapon.update(player, enemies, visualEffects, currentTime);
         }
         if (strongBoyPunch != null) strongBoyPunch.update(player, enemies, currentTime);
@@ -314,19 +324,19 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             enemy.collectDamageNumbers(damageNumbers);
 
             if (enemy.hp <= 0) {
+                SoundEffects.play(enemy.deathSound());
                 if (enemy.type == EnemyType.BOSS) {
-                    SoundEffects.play(SoundEffects.Effect.BOSS_DEATH);
                     visualEffects.add(VisualEffect.bossDeath(enemy.x, enemy.y, enemy.size));
                     bossesDefeated++;
                     if (bossesDefeated == BOSS_SEQUENCE.length) {
                         gameWon = true;
+                        mapMusic.stop();
                         activeKeys.clear();
                         SoundEffects.stop(SoundEffects.Effect.WALKING);
                     } else {
                         nextBossSpawnSeconds = elapsedSeconds + SpawnBalance.BOSS_REST_SECONDS;
                     }
                 } else {
-                    SoundEffects.play(SoundEffects.Effect.ENEMY_DEATH);
                     visualEffects.add(VisualEffect.enemyDeath(enemy.x, enemy.y, enemy.size));
                 }
                 int gemXp = (enemy.type == EnemyType.BOSS) ? 50 : 5;
@@ -408,9 +418,11 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         if (damage <= 0 || gameOver || gameWon
                 || gameTimeMillis - player.lastDamageTime < player.invincibilityDuration) return;
         player.hp = Math.max(0, player.hp - damage);
+        SoundEffects.play(SoundEffects.Effect.PLAYER_HURT);
         damageNumbers.add(DamageNumber.playerHit(player.x, player.y - player.getRenderSize() / 2.0, damage));
         player.lastDamageTime = gameTimeMillis;
         if (player.hp == 0) {
+            mapMusic.stop();
             gameOver = true;
             activeKeys.clear();
             SoundEffects.stop(SoundEffects.Effect.WALKING);
@@ -611,6 +623,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void returnToMenu() {
+        mapMusic.stop();
         running = false;
         SoundEffects.stop(SoundEffects.Effect.WALKING);
         SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
@@ -618,6 +631,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void setPaused(boolean paused) {
+        if (paused) mapMusic.pause(); else mapMusic.resume();
         this.paused = paused;
         pauseHoveredButton = -1;
         setCursor(java.awt.Cursor.getDefaultCursor());

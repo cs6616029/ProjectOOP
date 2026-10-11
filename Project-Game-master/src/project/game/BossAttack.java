@@ -28,6 +28,7 @@ final class BossAttack {
     private boolean finished, impactChecked;
     private boolean dragonFire;
     private boolean lightningStrike;
+    private boolean batEnergy;
     private double x, y;
 
     private BossAttack(Enemy owner, double x, double y, double angle, double speed,
@@ -54,6 +55,12 @@ final class BossAttack {
 
     static BossAttack swordWave(Enemy owner, double angle, long time) {
         return new BossAttack(owner, owner.x, owner.y, angle, 220, SWORD_WAVE_RADIUS, 10, Color.WHITE, time, false, true);
+    }
+
+    static BossAttack batEnergy(Enemy owner, double angle, long time) {
+        BossAttack energy = projectile(owner, angle, 210, 7, owner.damage, new Color(190, 90, 255), time);
+        energy.batEnergy = true;
+        return energy;
     }
 
     static BossAttack dragonFire(Enemy owner, double angle, long time) {
@@ -129,12 +136,13 @@ final class BossAttack {
         double playerRadius = owner.isBat() ? player.size * 0.20 : player.size / 2.0;
         if (Line2D.ptSegDist(oldX, oldY, x, y, player.x, player.y) <= radius + playerRadius) {
             finished = true;
-            if (dragonFire && effects != null) {
+            if ((dragonFire || batEnergy) && effects != null) {
                 double dx = x - oldX, dy = y - oldY;
                 double lengthSquared = dx * dx + dy * dy;
                 double progress = lengthSquared == 0 ? 0 : Math.max(0, Math.min(1,
                         ((player.x - oldX) * dx + (player.y - oldY) * dy) / lengthSquared));
-                effects.add(VisualEffect.explosion(oldX + progress * dx, oldY + progress * dy, 70));
+                double hitX = oldX + progress * dx, hitY = oldY + progress * dy;
+                effects.add(batEnergy ? VisualEffect.batHit(hitX, hitY) : VisualEffect.explosion(hitX, hitY, 70));
             }
             return damage;
         }
@@ -147,6 +155,16 @@ final class BossAttack {
         if (finished || owner.hp <= 0) return;
         Graphics2D g = (Graphics2D) graphics.create();
         int sx = (int) (x - camX), sy = (int) (y - camY);
+        if (batEnergy) {
+            BufferedImage frame = BatAttackAnimation.PROJECTILE;
+            int width = radius * 2;
+            int height = Math.max(1, width * frame.getHeight() / frame.getWidth());
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g.drawImage(frame, sx - width / 2, sy - height / 2, width, height, null);
+            g.dispose();
+            return;
+        }
         if (lightningStrike) {
             BufferedImage frame = LightningAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, LIGHTNING_FRAME_DURATION);
             int size = 180;

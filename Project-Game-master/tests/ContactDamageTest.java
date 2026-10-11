@@ -24,6 +24,13 @@ public class ContactDamageTest {
                 List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
                 enemies.clear();
                 Enemy enemy = new Enemy(player.x, player.y, type, 1);
+                if (type == EnemyType.FAST) {
+                    Field sprites = Enemy.class.getDeclaredField("FAST_SPRITES");
+                    sprites.setAccessible(true);
+                    Field sprite = Enemy.class.getDeclaredField("sprite");
+                    sprite.setAccessible(true);
+                    sprite.set(enemy, ((SpriteAnimation[]) sprites.get(null))[0]);
+                }
                 enemy.speed = 0;
                 double reach = enemy.size * 0.25 + player.size * 0.20;
                 enemy.x = player.x + reach + 1;
@@ -36,8 +43,11 @@ public class ContactDamageTest {
                 update.invoke(game);
                 check(player.hp == hp, "No premature contact damage: " + type);
                 enemy.x = player.x + reach - 1;
+                Field clock = game.getClass().getDeclaredField("activeTimeNanos");
+                clock.setAccessible(true);
+                clock.setLong(game, clock.getLong(game) + 280_000_000L);
                 update.invoke(game);
-                check(player.hp == hp - enemy.damage, "Close contact still deals damage: " + type);
+                check(player.hp == hp - enemy.damage, "Close swing deals damage after preparation: " + type);
                 update.invoke(game);
                 check(player.hp == hp - enemy.damage, "Contact respects invincibility: " + type);
                 enemy.x = player.x + reach * 0.8;

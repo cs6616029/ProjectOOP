@@ -326,7 +326,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 continue;
             }
 
-            enemy.update(player.x, player.y);
+            enemy.updateCombatMovement(player);
 
             if (enemy.type != EnemyType.BOSS && Math.hypot(enemy.x - player.x, enemy.y - player.y) > 1200) {
                 eIt.remove();
@@ -337,10 +337,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             enemy.updateRangedAttack(player, bossAttacks, currentTime);
 
             // แก้ไขการรับดาเมจ ให้เช็ค Invincibility Frames
-            if (enemy.isTouching(player)) {
-                damagePlayer(enemy.getContactDamage());
-                if (gameOver) return;
-            }
+            damagePlayer(enemy.updateMeleeAttack(player, currentTime));
+            if (gameOver) return;
         }
 
         Iterator<BossAttack> attackIterator = bossAttacks.iterator();
@@ -466,7 +464,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         }
         if (bossSpawnAlert != null) {
             if (gameOver || gameWon || bossSpawnAlert.isFinished(gameTimeMillis)) bossSpawnAlert = null;
-            else bossSpawnAlert.draw(dbg, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100, gameTimeMillis);
+            else {
+                bossSpawnAlert.drawScreenEdges(dbg, SCREEN_WIDTH, SCREEN_HEIGHT, gameTimeMillis);
+                bossSpawnAlert.draw(dbg, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100, gameTimeMillis);
+            }
         }
         drawUI(dbg);
         long presentationTime = System.nanoTime();
@@ -556,7 +557,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 gameOverAnimation.draw(g, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 128, System.nanoTime());
             }
             g.setColor(Color.WHITE);
-            g.setFont(new Font("SansSerif", Font.PLAIN, 20));
+            g.setFont(GameStartScreen.pixelFont(28));
             drawCentered(g, "Survived Time: " + timeStr, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
             drawCentered(g, "Final Score: " + score, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 36);
             if (gameWon) {

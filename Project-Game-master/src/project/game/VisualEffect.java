@@ -15,6 +15,13 @@ public class VisualEffect {
     private boolean laserHit;
     private boolean enemyDeath;
     private boolean swordHit;
+    private boolean batHit;
+
+    public static VisualEffect batHit(double x, double y) {
+        VisualEffect effect = new VisualEffect(x, y, 60, new Color(235, 120, 255), BatAttackAnimation.FRAME_COUNT * 3);
+        effect.batHit = true;
+        return effect;
+    }
 
     private static final class SwordHitAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.loadGrid("/project/game/effects/sword-hit-blood.png", 6, 6);
@@ -98,6 +105,11 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (batHit) {
+            g.drawImage(BatAttackAnimation.SPRITE.frameAt(currentFrame, 3),
+                    sx - radius, sy - radius, radius * 2, radius * 2, null);
+            return;
+        }
         if (swordHit) {
             g.drawImage(SwordHitAnimation.SPRITE.frameAt(currentFrame, 2),
                     sx - radius, sy - radius, radius * 2, radius * 2, null);

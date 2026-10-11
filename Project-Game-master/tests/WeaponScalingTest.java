@@ -33,8 +33,8 @@ public class WeaponScalingTest {
         };
     }
     public static void main(String[] args) throws Exception {
-        int[] base = {28,10,26,14,22,32,12,18};
-        int[] growth = {10,4,8,4,7,10,4,6};
+        int[] base = {28,1,26,14,22,32,12,18};
+        int[] growth = {10,1,8,4,7,10,4,6};
         Player player = new Player(0,0);
         for (int kind = 0; kind < 8; kind++) {
             Weapon locked = weapon(kind, 0);

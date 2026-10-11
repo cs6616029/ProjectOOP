@@ -149,7 +149,9 @@ public final class GameRegressionTest {
         player = (Player) get(game, "player");
         ((List<Weapon>) get(game, "weapons")).clear();
         player.hp = 1;
-        ((List<Enemy>) get(game, "enemies")).add(new Enemy(0, 0, EnemyType.NORMAL, 1));
+        Enemy killer = new Enemy(0, 0, EnemyType.NORMAL, 1);
+        killer.updateMeleeAttack(player, (long) get(game, "gameTimeMillis") - 280);
+        ((List<Enemy>) get(game, "enemies")).add(killer);
         ((List<Gem>) get(game, "gems")).add(new Gem(0, 0, 10, false));
         call(game, "updateGame");
         manager = (LevelManager) get(game, "levelManager");

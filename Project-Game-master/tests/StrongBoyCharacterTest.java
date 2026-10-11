@@ -108,13 +108,13 @@ public class StrongBoyCharacterTest {
         Enemy target = new Enemy(80, 0, EnemyType.TANK, 1);
         target.hp = 1000;
         aura.update(player, List.of(target), new ArrayList<>(), 10000);
-        check(target.hp == 990, "Starting aura deals base damage");
+        check(target.hp == 999, "Starting aura deals gentle burn damage");
         check(aura.getUpgradeDescription().contains("Radius 84 -> 99"), "Strong Boy aura starts proportionally larger");
         Enemy auraEdge = new Enemy(119, 0, EnemyType.NORMAL, 1);
         Enemy auraOutside = new Enemy(120, 0, EnemyType.NORMAL, 1);
         auraEdge.hp = auraOutside.hp = 1000;
         aura.update(player, List.of(auraEdge, auraOutside), new ArrayList<>(), 11000);
-        check(auraEdge.hp == 990 && auraOutside.hp == 1000, "Larger aura damage radius matches its visual width");
+        check(auraEdge.hp == 999 && auraOutside.hp == 1000, "Larger aura damage radius matches its visual width");
         LevelManager manager = (LevelManager) get(game, "levelManager");
         manager.gainXP(10, player, weapons, new ArrayList<>());
         check(((List<?>) get(manager, "offeredUpgrades")).get(0) == aura, "Aurafarming is the fixed primary upgrade");

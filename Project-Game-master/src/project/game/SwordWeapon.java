@@ -11,7 +11,7 @@ public class SwordWeapon extends Weapon {
             GifAnimation.load("/project/game/sword/aFwslc.gif");
 
     private long lastAttackTime = 0;
-    private final long baseCooldown = 1000; // คูลดาวน์พื้นฐาน 1 วินาที
+    private static final long STARTING_COOLDOWN = 1500;
     private boolean isAttacking = false;
     private long attackStartTime = 0;
     private long animationTime = 0;
@@ -33,6 +33,7 @@ public class SwordWeapon extends Weapon {
         animationTime = currentTime;
         if (level <= 0) return;
 
+        long baseCooldown = level == 1 ? STARTING_COOLDOWN : 1000;
         long effectiveCooldown = (long) (baseCooldown * player.attackCooldownMultiplier);
 
         if (currentTime - lastAttackTime >= effectiveCooldown) {

@@ -39,6 +39,7 @@ public class Enemy {
     private long nextRangedAttack = -1;
     private final List<DamageNumber> pendingDamageNumbers = new ArrayList<>();
     private int damageNumberSequence;
+    private final EnemyMeleeAttack meleeAttack = new EnemyMeleeAttack();
 
     void takeDamage(int amount) {
         if (hp <= 0 || amount <= 0) return;
@@ -108,6 +109,7 @@ public class Enemy {
     }
 
     public void update(double targetX, double targetY) {
+        if (meleeAttack.isActive()) return;
         facingLeft = targetX < x;
         if (bossSkill != null && (bossSkill.isCharging() || bossSkill.isWindingUp())) return;
         double angle = Math.atan2(targetY - y, targetX - x);
@@ -135,7 +137,17 @@ public class Enemy {
     }
 
     void updateBossSkill(Player player, List<BossAttack> attacks, long time) {
-        if (bossSkill != null) bossSkill.update(this, player, attacks, time);
+        if (bossSkill != null && !meleeAttack.isActive()) bossSkill.update(this, player, attacks, time);
+    }
+
+    void updateCombatMovement(Player player) {
+        if (!meleeAttack.isActive()) facingLeft = player.x < x;
+        if (!isBat() && Math.hypot(x - player.x, y - player.y) <= size * 0.25 + player.size * 0.20 + 14) return;
+        update(player.x, player.y);
+    }
+
+    int updateMeleeAttack(Player player, long time) {
+        return meleeAttack.update(this, player, time, bossSkill != null && bossSkill.isWindingUp());
     }
 
     void updateRangedAttack(Player player, List<BossAttack> attacks, long time) {
@@ -144,8 +156,7 @@ public class Enemy {
         if (nextRangedAttack < 0) nextRangedAttack = time + 1000;
         if (time < nextRangedAttack || Math.hypot(player.x - x, player.y - y) > 450) return;
         double angle = Math.atan2(player.y - y, player.x - x);
-        attacks.add(BossAttack.projectile(this, angle, 210, 7, damage,
-                new Color(190, 90, 255), time));
+        attacks.add(BossAttack.batEnergy(this, angle, time));
         nextRangedAttack = time + 2000;
     }
 
@@ -158,17 +169,20 @@ public class Enemy {
     }
 
     public void draw(Graphics2D g, double camX, double camY) {
-        int screenX = (int) (x - camX);
-        int screenY = (int) (y - camY);
-        BufferedImage frame = getSprite().frameAt(System.currentTimeMillis(), 110);
+        int screenX = (int) (x - camX + meleeAttack.offsetX());
+        int screenY = (int) (y - camY + meleeAttack.offsetY());
+        BufferedImage frame = getSprite().frameAt(meleeAttack.isActive() ? 0 : System.currentTimeMillis(), 110);
+        int renderHeight = (int) Math.round(size * meleeAttack.squash());
+        int top = screenY + size / 2 - renderHeight;
         if (facingLeft) {
-            g.drawImage(frame, screenX + size / 2, screenY - size / 2,
+            g.drawImage(frame, screenX + size / 2, top,
                     screenX - size / 2, screenY + size / 2,
                     0, 0, frame.getWidth(), frame.getHeight(), null);
         } else {
-            g.drawImage(frame, screenX - size / 2, screenY - size / 2,
-                    size, size, null);
+            g.drawImage(frame, screenX - size / 2, top,
+                    size, renderHeight, null);
         }
+        meleeAttack.draw(g, this, camX, camY);
 
         if (type == EnemyType.BOSS) {
             g.setColor(Color.WHITE);

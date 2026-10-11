@@ -25,6 +25,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Laser travel checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.BossDeathEffectTest
 if ($LASTEXITCODE -ne 0) { throw 'Boss death effect checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.EnemyMeleeAttackTest
+if ($LASTEXITCODE -ne 0) { throw 'Enemy melee attack checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.ContactDamageTest
 if ($LASTEXITCODE -ne 0) { throw 'Contact damage checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.StrongBoyCharacterTest

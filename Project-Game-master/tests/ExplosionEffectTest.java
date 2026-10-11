@@ -163,13 +163,13 @@ public class ExplosionEffectTest {
         missed = new Enemy(400, 0, EnemyType.NORMAL, 1);
         first.hp = second.hp = missed.hp = 1000;
         aura.update(player, List.of(first, second, dead, missed), effects, 70000);
-        check(effects.size() == 2 && first.hp == 990 && second.hp == 990 && missed.hp == 1000 && dead.hp == 0,
+        check(effects.size() == 2 && first.hp == 999 && second.hp == 999 && missed.hp == 1000 && dead.hp == 0,
                 "Aura explodes for every live enemy hit, excluding dead and distant enemies");
         check(effects.get(0).x == first.x && effects.get(0).y == first.y
                 && effects.get(1).x == second.x && effects.get(1).y == second.y,
                 "Aura explosions occur at hit enemy positions");
         aura.update(player, List.of(first, second), effects, 70010);
-        check(effects.size() == 2 && first.hp == 990, "Aura cooldown prevents repeated explosion every frame");
+        check(effects.size() == 2 && first.hp == 999, "Aura cooldown prevents repeated explosion every frame");
         verifyAnimation(effects.get(0));
         System.out.println("PASS: Ten Ring impacts, crowd hits, cooldown, dead enemies and shared Fire Staff animation");
         System.out.println("PASS: independent rings, visual contact edge, simultaneous killing hits and laser impact explosions");

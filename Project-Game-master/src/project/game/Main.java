@@ -18,9 +18,9 @@ public class Main {
     }
 
     private static void showStartScreen(JFrame frame) {
-        frame.setContentPane(new GameStartScreen((characterType, mapResource) -> {
+        frame.setContentPane(new GameStartScreen((characterType, mapResource, difficulty) -> {
             ISEKAISurvivors game = new ISEKAISurvivors(
-                    characterType, mapResource, () -> showStartScreen(frame));
+                    characterType, mapResource, difficulty, () -> showStartScreen(frame));
             frame.setContentPane(game);
             frame.revalidate();
             frame.repaint();

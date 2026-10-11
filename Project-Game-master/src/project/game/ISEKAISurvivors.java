@@ -38,6 +38,7 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
     private final BufferedImage mapBackground;
     private final MapMusic mapMusic;
     private final SoundEffects.Effect walkingSound;
+    private final Difficulty difficulty;
     private final Player.CharacterType characterType;
     private final Runnable onReturnToMenu;
 
@@ -94,6 +95,16 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
 
     public ISEKAISurvivors(Player.CharacterType characterType, String mapBackgroundResource,
             Runnable onReturnToMenu) {
+        this(characterType, mapBackgroundResource, Difficulty.NORMAL, onReturnToMenu);
+    }
+
+    public ISEKAISurvivors(Player.CharacterType characterType, String mapBackgroundResource, Difficulty difficulty) {
+        this(characterType, mapBackgroundResource, difficulty, () -> {});
+    }
+
+    public ISEKAISurvivors(Player.CharacterType characterType, String mapBackgroundResource,
+            Difficulty difficulty, Runnable onReturnToMenu) {
+        this.difficulty = java.util.Objects.requireNonNull(difficulty);
         this.characterType = characterType;
         this.onReturnToMenu = onReturnToMenu;
         mapBackground = loadMapBackground(mapBackgroundResource);
@@ -323,7 +334,7 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
         if (strongBoyPunch != null) strongBoyPunch.update(player, enemies, currentTime);
 
         boolean bossAlive = hasLivingBoss();
-        spawnInterval = SpawnBalance.intervalMillis(elapsedSeconds, levelManager.getLevel(), bossAlive);
+        spawnInterval = difficulty.spawnInterval(SpawnBalance.intervalMillis(elapsedSeconds, levelManager.getLevel(), bossAlive));
         if (currentTime - lastSpawnTime >= spawnInterval) {
             spawnEnemyAroundPlayer();
             lastSpawnTime = currentTime;
@@ -427,7 +438,7 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
         for (Enemy enemy : enemies) {
             if (enemy.type != EnemyType.BOSS && enemy.hp > 0) regularCount++;
         }
-        int spawnCount = Math.min(SpawnBalance.batchSize(elapsedSeconds, hasLivingBoss()),
+        int spawnCount = Math.min(difficulty.spawnCount(SpawnBalance.batchSize(elapsedSeconds, hasLivingBoss())),
                 SpawnBalance.MAX_REGULAR_ENEMIES - regularCount);
 
         for (int i = 0; i < spawnCount; i++) {
@@ -438,13 +449,16 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
             double ey = player.y + Math.sin(angle) * spawnDistance;
 
             EnemyType type = getRandomEnemyType();
-            enemies.add(new Enemy(ex, ey, type, levelManager.getLevel()));
+            Enemy enemy = new Enemy(ex, ey, type, levelManager.getLevel());
+            enemy.hp = enemy.maxHp = difficulty.health(enemy.hp);
+            enemies.add(enemy);
         }
     }
 
     private void damagePlayer(int damage) {
         if (damage <= 0 || gameOver || gameWon
                 || gameTimeMillis - player.lastDamageTime < player.invincibilityDuration) return;
+        damage = difficulty.damage(damage);
         player.hp = Math.max(0, player.hp - damage);
         SoundEffects.play(SoundEffects.Effect.PLAYER_HURT);
         damageNumbers.add(DamageNumber.playerHit(player.x, player.y - player.getRenderSize() / 2.0, damage));
@@ -484,7 +498,7 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
 
         Enemy boss = new Enemy(ex, ey, EnemyType.BOSS, levelManager.getLevel(),
                 BOSS_SEQUENCE[bossesDefeated]);
-        boss.hp = Enemy.BOSS_BASE_HEALTH * (bossesDefeated + 1);
+        boss.hp = difficulty.health(Enemy.BOSS_BASE_HEALTH * (bossesDefeated + 1));
         boss.maxHp = boss.hp;
         enemies.add(boss);
         bossSpawnAlert = new BossSpawnAlert(gameTimeMillis);

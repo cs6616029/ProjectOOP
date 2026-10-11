@@ -94,6 +94,8 @@ public class StrongBoyCharacterTest {
             click.invoke(screen, strongCard.x + strongCard.width / 2, strongCard.y + 120);
             click.invoke(screen, 680, 540);
             click.invoke(screen, 660, 540);
+            check(selected[0] == null, "World selection proceeds to difficulty");
+            click.invoke(screen, 660, 540);
             check(selected[0] == Player.CharacterType.STRONG_BOY, "Menu starts selected Strong Boy");
         } finally {
             ((Timer) get(screen, "animationTimer")).stop();

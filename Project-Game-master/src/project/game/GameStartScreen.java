@@ -14,7 +14,11 @@ public final class GameStartScreen extends JPanel {
     private static final Color MUTED = new Color(158,164,157), RED = new Color(191,69,59), PANEL = new Color(16,22,25,238);
     private static final Font PIXEL_FONT = loadFont();
     static Font pixelFont(float size) { return PIXEL_FONT.deriveFont(size); }
-    private enum Page { START, PLAYER, MAP }
+    private enum Page { START, PLAYER, MAP, DIFFICULTY }
+    @FunctionalInterface
+    public interface GameStartHandler {
+        void start(Player.CharacterType character, String map, Difficulty difficulty);
+    }
     private static final Player.CharacterType[] CHARACTERS = Player.CharacterType.values();
     private static final String[] HERO_NAMES = {"SWORDSMAN","IRON MAN","STRONG BOY"};
     private static final String[] HERO_ROLES = {"THE BLADE","THE ARSENAL","THE POWERHOUSE"};
@@ -25,15 +29,19 @@ public final class GameStartScreen extends JPanel {
         new MapOption("Night","/project/game/Map/night.jpg","AFTER DARK"),
         new MapOption("Lava","/project/game/Map/lava.jpg","ASH & EMBER")
     };
-    private final BiConsumer<Player.CharacterType,String> onGameStart;
+    private final GameStartHandler onGameStart;
     private final SpriteAnimation[] characterPreviews = new SpriteAnimation[CHARACTERS.length];
     private final BufferedImage[] mapPreviews = new BufferedImage[MAPS.length];
     private final Timer animationTimer;
     private Page page = Page.START;
-    private int selectedCharacter, selectedMap, hoveredIndex = -1;
+    private int selectedCharacter, selectedMap, selectedDifficulty, hoveredIndex = -1;
     private boolean primaryButtonHovered, backButtonHovered, launching;
 
     public GameStartScreen(BiConsumer<Player.CharacterType,String> onGameStart) {
+        this((character, map, difficulty) -> onGameStart.accept(character, map));
+    }
+
+    public GameStartScreen(GameStartHandler onGameStart) {
         this.onGameStart = onGameStart;
         setPreferredSize(new Dimension(900,675)); setFocusable(true);
         for(int i=0;i<CHARACTERS.length;i++) characterPreviews[i]=SpriteAnimation.load(CHARACTERS[i].getIdleSpriteResource(),8);
@@ -61,11 +69,11 @@ public final class GameStartScreen extends JPanel {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         drawBackground(g);
-        if(page==Page.START) drawStartPage(g); else if(page==Page.PLAYER) drawPlayerPage(g); else drawMapPage(g);
+        if(page==Page.START) drawStartPage(g); else if(page==Page.PLAYER) drawPlayerPage(g); else if(page==Page.MAP) drawMapPage(g); else drawDifficultyPage(g);
         rightText(g,"ISEKAI SURVIVORS",10,MUTED,752,586); g.dispose();
     }
     private void drawBackground(Graphics2D g) {
-        cover(g,mapPreviews[page==Page.MAP?selectedMap:0],0,0,800,600);
+        cover(g,mapPreviews[page==Page.MAP||page==Page.DIFFICULTY?selectedMap:0],0,0,800,600);
         g.setColor(new Color(5,12,14,190)); g.fillRect(0,0,800,600);
         g.setPaint(new GradientPaint(0,0,new Color(7,11,17,75),0,600,new Color(8,10,15,245))); g.fillRect(0,0,800,600);
         long phase=System.currentTimeMillis()/180;
@@ -95,7 +103,7 @@ public final class GameStartScreen extends JPanel {
         centered(g,"ENTER TO BEGIN",11,GOLD,400,556);
     }
     private void drawHeader(Graphics2D g,String title) {
-        text(g,"ISEKAI SURVIVORS",12,GOLD,48,49); rightText(g,page==Page.PLAYER?"01 / HERO":"02 / WORLD",12,MUTED,752,49);
+        text(g,"ISEKAI SURVIVORS",12,GOLD,48,49); rightText(g,page==Page.PLAYER?"01 / HERO":page==Page.MAP?"02 / WORLD":"03 / DIFFICULTY",12,MUTED,752,49);
         text(g,title,34,WHITE,48,104);
         g.setColor(new Color(241,197,113,60)); g.fillRect(48,149,704,1);
     }
@@ -131,8 +139,28 @@ public final class GameStartScreen extends JPanel {
             }
             text(g,MAPS[i].name.toUpperCase(),18,WHITE,card.x+16,card.y+116);
         }
-        drawFooter(g,"START ADVENTURE  >",HERO_NAMES[selectedCharacter]+" / "+MAPS[selectedMap].name.toUpperCase());
+        drawFooter(g,"CHOOSE DIFFICULTY >",HERO_NAMES[selectedCharacter]+" / "+MAPS[selectedMap].name.toUpperCase());
     }
+    private void drawDifficultyPage(Graphics2D g) {
+        drawHeader(g,"CHOOSE DIFFICULTY");
+        Difficulty[] options=Difficulty.values();
+        for(int i=0;i<options.length;i++) {
+            Rectangle card=playerCard(i); boolean selected=selectedDifficulty==i;
+            Difficulty option=options[i]; drawCard(g,card,selected,hoveredIndex==i);
+            centered(g,option.label,24,selected?GOLD:WHITE,card.x+card.width/2,card.y+61);
+            for(int mark=0;mark<=i;mark++) {
+                int cx=card.x+card.width/2+(int)((mark-i/2.0)*32);
+                g.setColor(i==0?GOLD:RED);
+                g.fillPolygon(new int[]{cx,cx+10,cx,cx-10},new int[]{card.y+96,card.y+110,card.y+124,card.y+110},4);
+            }
+            centered(g,option.description,12,WHITE,card.x+card.width/2,card.y+173);
+            centered(g,option.detail,12,MUTED,card.x+card.width/2,card.y+202);
+            if(selected) { g.setColor(GOLD); g.fillRect(card.x+1,card.y+card.height-21,card.width-2,20); }
+            centered(g,selected?"SELECTED":"CLICK TO SELECT",10,selected?PANEL:MUTED,card.x+card.width/2,card.y+card.height-7);
+        }
+        drawFooter(g,"START ADVENTURE >",HERO_NAMES[selectedCharacter]+" / "+MAPS[selectedMap].name.toUpperCase()+" / "+options[selectedDifficulty].label);
+    }
+
     private void drawFooter(Graphics2D g,String primary,String summary) {
         drawButton(g,backButton(),"< BACK",false,backButtonHovered); drawButton(g,primaryButton(),primary,true,primaryButtonHovered);
         text(g,summary,11,GOLD,48,506); centered(g,"ARROWS TO SELECT / ENTER TO CONTINUE",9,MUTED,374,549);
@@ -167,25 +195,28 @@ public final class GameStartScreen extends JPanel {
         else if(page!=Page.START&&backButton().contains(x,y)) back();
         else if(page==Page.PLAYER) { for(int i=0;i<CHARACTERS.length;i++) if(playerCard(i).contains(x,y)) select(i); }
         else if(page==Page.MAP) { for(int i=0;i<MAPS.length;i++) if(mapCard(i).contains(x,y)) select(i); }
+        else if(page==Page.DIFFICULTY) { for(int i=0;i<Difficulty.values().length;i++) if(playerCard(i).contains(x,y)) select(i); }
         updateHover(x,y);
     }
     private void advance() {
         if(launching) return; SoundEffects.play(SoundEffects.Effect.MENU_CLICK);
         if(page==Page.START) page=Page.PLAYER; else if(page==Page.PLAYER) page=Page.MAP;
-        else { launching=true; animationTimer.stop(); onGameStart.accept(CHARACTERS[selectedCharacter],MAPS[selectedMap].resource); }
+        else if(page==Page.MAP) page=Page.DIFFICULTY;
+        else { launching=true; animationTimer.stop(); onGameStart.start(CHARACTERS[selectedCharacter],MAPS[selectedMap].resource,Difficulty.values()[selectedDifficulty]); }
         resetHover(); repaint();
     }
     private void back() {
-        if(launching||page==Page.START) return; page=page==Page.MAP?Page.PLAYER:Page.START;
+        if(launching||page==Page.START) return; page=page==Page.DIFFICULTY?Page.MAP:page==Page.MAP?Page.PLAYER:Page.START;
         SoundEffects.play(SoundEffects.Effect.MENU_CLICK); resetHover(); repaint();
     }
     private void selectBy(int delta) {
         if(page==Page.START||launching) return;
-        int count=page==Page.PLAYER?CHARACTERS.length:MAPS.length,current=page==Page.PLAYER?selectedCharacter:selectedMap;
+        int count=page==Page.PLAYER?CHARACTERS.length:page==Page.MAP?MAPS.length:Difficulty.values().length,
+            current=page==Page.PLAYER?selectedCharacter:page==Page.MAP?selectedMap:selectedDifficulty;
         select(Math.floorMod(current+delta,count));
     }
     private void select(int index) {
-        if(page==Page.PLAYER) selectedCharacter=index; else selectedMap=index;
+        if(page==Page.PLAYER) selectedCharacter=index; else if(page==Page.MAP) selectedMap=index; else selectedDifficulty=index;
         SoundEffects.play(SoundEffects.Effect.SELECT); repaint();
     }
     private void resetHover() {
@@ -195,6 +226,7 @@ public final class GameStartScreen extends JPanel {
         hoveredIndex=-1;
         if(page==Page.PLAYER) { for(int i=0;i<CHARACTERS.length;i++) if(playerCard(i).contains(x,y)) hoveredIndex=i; }
         else if(page==Page.MAP) { for(int i=0;i<MAPS.length;i++) if(mapCard(i).contains(x,y)) hoveredIndex=i; }
+        else if(page==Page.DIFFICULTY) { for(int i=0;i<Difficulty.values().length;i++) if(playerCard(i).contains(x,y)) hoveredIndex=i; }
         primaryButtonHovered=primaryButton().contains(x,y); backButtonHovered=page!=Page.START&&backButton().contains(x,y);
         setCursor(Cursor.getPredefinedCursor(hoveredIndex>=0||primaryButtonHovered||backButtonHovered?Cursor.HAND_CURSOR:Cursor.DEFAULT_CURSOR)); repaint();
     }

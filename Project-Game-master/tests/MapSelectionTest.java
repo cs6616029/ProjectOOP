@@ -52,6 +52,8 @@ public class MapSelectionTest {
                 graphics.dispose();
                 if (args.length > 0 && index == resources.length - 1) javax.imageio.ImageIO.write(preview, "png", new java.io.File(args[0]));
                 click(screen, 660, 540);
+                check(selected[0] == null, "Map selection proceeds to difficulty before starting");
+                click(screen, 660, 540);
                 check(selected[0].equals("/project/game/Map/" + resources[index] + ".jpg"), "Start uses selected map");
                 ISEKAISurvivors game = new ISEKAISurvivors(Player.CharacterType.STRONG_BOY, selected[0]);
                 var render = game.getClass().getDeclaredMethod("renderToBuffer");

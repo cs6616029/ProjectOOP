@@ -187,6 +187,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         weapons.add(new SpearWeapon(0));
         weapons.add(new HolyWaterWeapon(0));
         weapons.add(new ShieldWeapon(0));
+        weapons.add(new TornadoWeapon(0));
         levelManager.setPrimaryWeapon(weapons.get(primaryWeaponIndex));
 
         passiveItems.add(new PassiveItem(PassiveItem.ItemType.ARMOR));

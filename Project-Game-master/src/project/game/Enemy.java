@@ -41,6 +41,7 @@ public class Enemy {
     private int damageNumberSequence;
     private final EnemyMeleeAttack meleeAttack = new EnemyMeleeAttack();
     private long statusTime, frozenUntil;
+    private long airborneStart = -1, airborneUntil;
     private int frostHits;
     private BufferedImage frozenFrame;
     private static final java.util.Map<BufferedImage, BufferedImage> FROZEN_FRAMES = new java.util.IdentityHashMap<>();
@@ -48,6 +49,26 @@ public class Enemy {
     void updateStatus(long time) { statusTime = time; }
 
     boolean isFrozen() { return hp > 0 && statusTime < frozenUntil; }
+
+    boolean isAirborne() { return hp > 0 && airborneStart >= 0 && statusTime < airborneUntil; }
+
+    private boolean isImmobilized() { return isFrozen() || isAirborne(); }
+
+    void applyAirborne(long time) {
+        updateStatus(time);
+        if (hp <= 0) return;
+        if (!isAirborne()) airborneStart = time;
+        airborneUntil = time + 750;
+        meleeAttack.cancelUntil(airborneUntil + 200);
+        if (bossSkill != null) bossSkill.cancelUntil(airborneUntil + 500);
+        nextRangedAttack = Math.max(nextRangedAttack, airborneUntil + 500);
+    }
+
+    double airborneHeight() {
+        if (!isAirborne()) return 0;
+        double progress = (statusTime - airborneStart) / (double) (airborneUntil - airborneStart);
+        return Math.sin(Math.PI * progress) * (type == EnemyType.BOSS ? 28 : 48);
+    }
 
     void applyFrostHit(long time) {
         updateStatus(time);
@@ -142,7 +163,7 @@ public class Enemy {
     }
 
     public void update(double targetX, double targetY) {
-        if (isFrozen()) return;
+        if (isImmobilized()) return;
         if (meleeAttack.isActive()) return;
         facingLeft = targetX < x;
         if (bossSkill != null && (bossSkill.isCharging() || bossSkill.isWindingUp())) return;
@@ -175,12 +196,12 @@ public class Enemy {
 
     void updateBossSkill(Player player, List<BossAttack> attacks, long time) {
         updateStatus(time);
-        if (isFrozen()) return;
+        if (isImmobilized()) return;
         if (bossSkill != null && !meleeAttack.isActive()) bossSkill.update(this, player, attacks, time);
     }
 
     void updateCombatMovement(Player player) {
-        if (isFrozen()) return;
+        if (isImmobilized()) return;
         if (!meleeAttack.isActive()) facingLeft = player.x < x;
         if (!isBat() && Math.hypot(x - player.x, y - player.y) <= size * 0.25 + player.size * 0.20 + 14) return;
         update(player.x, player.y);
@@ -188,13 +209,13 @@ public class Enemy {
 
     int updateMeleeAttack(Player player, long time) {
         updateStatus(time);
-        if (isFrozen()) return 0;
+        if (isImmobilized()) return 0;
         return meleeAttack.update(this, player, time, bossSkill != null && bossSkill.isWindingUp());
     }
 
     void updateRangedAttack(Player player, List<BossAttack> attacks, long time) {
         updateStatus(time);
-        if (isFrozen()) return;
+        if (isImmobilized()) return;
         if (!isBat() || hp <= 0) return;
         // Use gameplay time so pausing also pauses the firing cooldown.
         if (nextRangedAttack < 0) nextRangedAttack = time + 1000;
@@ -209,14 +230,19 @@ public class Enemy {
     }
 
     void drawBossWarning(Graphics2D g, double camX, double camY) {
-        if (isFrozen()) return;
+        if (isImmobilized()) return;
         if (bossSkill != null && hp > 0) bossSkill.drawWarning(g, camX, camY);
     }
 
     public void draw(Graphics2D g, double camX, double camY) {
+        if (isAirborne()) {
+            g.setColor(new Color(0, 0, 0, 90));
+            g.fillOval((int) (x - camX - size * 0.2), (int) (y - camY + size * 0.25),
+                    (int) (size * 0.4), (int) (size * 0.12));
+        }
         int screenX = (int) (x - camX + meleeAttack.offsetX());
-        int screenY = (int) (y - camY + meleeAttack.offsetY());
-        BufferedImage frame = getSprite().frameAt(meleeAttack.isActive() ? 0 : System.currentTimeMillis(), 110);
+        int screenY = (int) (y - camY + meleeAttack.offsetY() - airborneHeight());
+        BufferedImage frame = getSprite().frameAt(meleeAttack.isActive() || isAirborne() ? 0 : System.currentTimeMillis(), 110);
         if (isFrozen()) frame = iceTint(frozenFrame);
         int renderHeight = (int) Math.round(size * meleeAttack.squash());
         int top = screenY + size / 2 - renderHeight;

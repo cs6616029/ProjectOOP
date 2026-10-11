@@ -47,7 +47,8 @@ final class EnemyMeleeAttack {
                 dashTraveled = traveled;
             }
             if (age >= hitTime + swingTime + RECOVERY) started = -1;
-            if (previousAge < hitTime && age >= hitTime && age < hitTime + swingTime) {
+            // Resolve the crossed impact once, even if a delayed frame skips the visual swing.
+            if (previousAge < hitTime && age >= hitTime) {
                 if (skeletonAttack) SoundEffects.play(SoundEffects.Effect.SWORD);
                 double dx = player.x - enemy.x, dy = player.y - enemy.y;
                 double difference = Math.atan2(Math.sin(Math.atan2(dy, dx) - angle),

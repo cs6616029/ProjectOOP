@@ -304,7 +304,7 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
 
         if (dx == 0 && dy == 0) SoundEffects.stop(walkingSound);
         else SoundEffects.loop(walkingSound);
-        player.move(dx, dy);
+        player.move(dx, dy, deltaNanos / 1_000_000_000.0);
 
         cameraX = player.x - (SCREEN_WIDTH / 2.0);
         cameraY = player.y - (SCREEN_HEIGHT / 2.0);

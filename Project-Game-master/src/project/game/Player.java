@@ -124,6 +124,14 @@ public class Player {
     }
 
     public void move(int dx, int dy) {
+        move(dx, dy, 1.0 / 60.0);
+    }
+
+    /** Speed is authored in pixels per frame at 60 FPS. */
+    public void move(int dx, int dy, double deltaSeconds) {
+        if (!Double.isFinite(deltaSeconds) || deltaSeconds < 0)
+            throw new IllegalArgumentException("Invalid movement delta");
+        double distance = speed * 60.0 * deltaSeconds;
         moving = dx != 0 || dy != 0;
         if (dx != 0 || dy != 0) {
             double len = Math.hypot(dx, dy);
@@ -131,12 +139,12 @@ public class Player {
             lastDirY = dy / len;
 
             if (dx != 0 && dy != 0) {
-                double diagSpeed = speed / Math.sqrt(2);
+                double diagSpeed = distance / Math.sqrt(2);
                 x += dx * diagSpeed;
                 y += dy * diagSpeed;
             } else {
-                x += dx * speed;
-                y += dy * speed;
+                x += dx * distance;
+                y += dy * distance;
             }
         }
     }

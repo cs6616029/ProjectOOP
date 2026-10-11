@@ -220,6 +220,10 @@ public class Enemy {
         update(player.x, player.y);
     }
 
+    boolean isSkeletonBoss() {
+        return type == EnemyType.BOSS && bossSkill.kind == BossSkill.Kind.SKELETON;
+    }
+
     int updateMeleeAttack(Player player, long time) {
         updateStatus(time);
         if (isImmobilized()) return 0;

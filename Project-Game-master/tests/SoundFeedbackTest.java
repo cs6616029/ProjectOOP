@@ -59,6 +59,29 @@ public class SoundFeedbackTest {
         check(slash.starts == 1, "Sword sound plays once per swing");
         sword.update(fighter, List.of(), new ArrayList<>(), 11500);
         check(slash.starts == 2 && slash.stops == 1, "Next swing replays the replacement sound");
+        Enemy skeleton = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.SKELETON);
+        fighter.x = 150;
+        skeleton.updateMeleeAttack(fighter, 20000);
+        skeleton.updateMeleeAttack(fighter, 20459);
+        check(slash.starts == 2, "Skeleton warning and dash are silent before slash");
+        check(skeleton.updateMeleeAttack(fighter, 20460) == skeleton.damage && slash.starts == 3,
+                "Skeleton plays sword sound exactly when melee slash hits");
+        skeleton.updateMeleeAttack(fighter, 20460); skeleton.updateMeleeAttack(fighter, 20500);
+        check(slash.starts == 3, "Skeleton slash frames cannot repeat sound");
+        skeleton = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.SKELETON);
+        skeleton.updateMeleeAttack(fighter, 30000); fighter.y = 300;
+        check(skeleton.updateMeleeAttack(fighter, 30460) == 0 && slash.starts == 4,
+                "Dodged slash still plays its sword sound");
+        fighter.y = 0;
+        for (int interruption = 0; interruption < 3; interruption++) {
+            skeleton = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.SKELETON);
+            skeleton.updateMeleeAttack(fighter, 40000);
+            if (interruption == 0) skeleton.hp = 0;
+            else if (interruption == 1) { skeleton.applyFrostHit(40300); skeleton.applyFrostHit(40300); }
+            else skeleton.applyAirborne(40300);
+            skeleton.updateMeleeAttack(fighter, 40460);
+            check(slash.starts == 4, "Cancelled Skeleton slash stays silent");
+        }
         System.out.println("PASS: supplied sounds decode as PCM, hurt on real and lethal damage, silent invincibility, sword replacement and replay");
     }
 }

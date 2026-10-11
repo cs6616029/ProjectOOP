@@ -34,6 +34,7 @@ final class SoundEffects {
         MUSIC_FOREST("forest-musicbg.wav"),
         MUSIC_DESERT("desert-musicbg.wav"),
         MUSIC_NIGHT("night-musicbg.wav"),
+        MUSIC_LAVA("lava-musicbg.wav"),
         WALKING("walking_6QdYC8X.wav");
 
         private final String resourceName;

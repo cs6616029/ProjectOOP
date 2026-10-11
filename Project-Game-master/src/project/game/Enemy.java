@@ -119,7 +119,7 @@ public class Enemy {
             default -> SoundEffects.Effect.BOSS_DEATH;
         };
         if (type == EnemyType.TANK) return SoundEffects.Effect.CRAB_DEATH;
-        if (sprite == NORMAL_SPRITES[0]) return SoundEffects.Effect.SLIME_DEATH;
+        if (sprite == NORMAL_SPRITES[0] || sprite == NORMAL_SPRITES[3]) return SoundEffects.Effect.ENEMY_DEATH;
         if (sprite == NORMAL_SPRITES[1] || sprite == FAST_SPRITES[0]) return SoundEffects.Effect.DOG_DEATH;
         if (sprite == NORMAL_SPRITES[4]) return SoundEffects.Effect.GOBLIN_DEATH;
         return SoundEffects.Effect.ENEMY_DEATH;

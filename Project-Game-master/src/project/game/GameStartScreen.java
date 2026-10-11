@@ -63,7 +63,7 @@ public final class GameStartScreen extends JPanel {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         drawBackground(g);
         if(page==Page.START) drawStartPage(g); else if(page==Page.PLAYER) drawPlayerPage(g); else drawMapPage(g);
-        rightText(g,"VAMPIRE SURVIVORS",10,MUTED,752,586); g.dispose();
+        rightText(g,"ISEKAI SURVIVORS",10,MUTED,752,586); g.dispose();
     }
     private void drawBackground(Graphics2D g) {
         cover(g,mapPreviews[page==Page.MAP?selectedMap:0],0,0,800,600);
@@ -82,7 +82,7 @@ public final class GameStartScreen extends JPanel {
     private void drawStartPage(Graphics2D g) {
         text(g,"VS / SURVIVAL",14,GOLD,48,56); rightText(g,"3 HEROES  /  4 WORLDS",12,MUTED,752,56);
         centered(g,"SURVIVE. EVOLVE. CONQUER.",14,WHITE,400,109);
-        title(g,"VAMPIRE",54,400,179,WHITE); title(g,"SURVIVORS",64,400,242,GOLD);
+        title(g,"ISEKAI",54,400,179,WHITE); title(g,"SURVIVORS",64,400,242,GOLD);
         g.setColor(RED); g.fillRect(360,260,80,3);
         for(int i=0;i<CHARACTERS.length;i++) {
             int cx=400+(i-1)*118; g.setColor(new Color(0,0,0,125)); g.fillOval(cx-34,348,68,12);
@@ -94,7 +94,7 @@ public final class GameStartScreen extends JPanel {
         centered(g,"ENTER TO BEGIN",11,GOLD,400,556);
     }
     private void drawHeader(Graphics2D g,String title,String subtitle) {
-        text(g,"VAMPIRE SURVIVORS",12,GOLD,48,49); rightText(g,page==Page.PLAYER?"01 / HERO":"02 / WORLD",12,MUTED,752,49);
+        text(g,"ISEKAI SURVIVORS",12,GOLD,48,49); rightText(g,page==Page.PLAYER?"01 / HERO":"02 / WORLD",12,MUTED,752,49);
         text(g,title,34,WHITE,48,104); text(g,subtitle,13,MUTED,49,131);
         g.setColor(new Color(241,197,113,60)); g.fillRect(48,149,704,1);
     }

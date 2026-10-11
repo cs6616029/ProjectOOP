@@ -30,7 +30,7 @@ public class MapMusicTest {
     }
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        for (String map : List.of("forest", "desert", "night")) {
+        for (String map : List.of("forest", "desert", "night", "lava")) {
             try (var audio = AudioSystem.getAudioInputStream(MapMusicTest.class.getResource("/project/game/sounds/" + map + "-musicbg.wav"))) {
                 check(audio.getFormat().getSampleSizeInBits() == 16 && audio.getFormat().getChannels() == 2,
                         "Converted map music is compatible stereo PCM");
@@ -39,9 +39,10 @@ public class MapMusicTest {
             }
         }
         Map<SoundEffects.Effect, Clip> clips = (Map<SoundEffects.Effect, Clip>) field(SoundEffects.class, "clips").get(null);
-        Playback forest = new Playback(), desert = new Playback(), night = new Playback();
+        Playback forest = new Playback(), desert = new Playback(), night = new Playback(), lava = new Playback();
         clips.put(SoundEffects.Effect.MUSIC_FOREST, forest.clip()); clips.put(SoundEffects.Effect.MUSIC_DESERT, desert.clip());
         clips.put(SoundEffects.Effect.MUSIC_NIGHT, night.clip());
+        clips.put(SoundEffects.Effect.MUSIC_LAVA, lava.clip());
         MapMusic music = new MapMusic("/project/game/Map/forest.jpg");
         music.resume(); check(forest.loops == 0, "Construction does not start background music");
         music.start(); check(forest.loops == 1 && forest.resets == 1 && !night.running && !desert.running, "Forest starts its own looping track");
@@ -53,8 +54,15 @@ public class MapMusicTest {
         check(!desert.running && night.running, "Night selects its supplied song");
         nightMusic.start(); check(night.resets == 2, "Restart begins music from the start");
         nightMusic.stop(); nightMusic.resume(); check(!night.running, "Stopped game music cannot resume accidentally");
-        new MapMusic("/project/game/Map/lava.jpg").start();
-        check(!forest.running && !desert.running && !night.running, "Maps without a supplied track do not play unrelated music");
+        MapMusic lavaMusic = new MapMusic("/project/game/Map/lava.jpg"); lavaMusic.start();
+        check(lava.running && lava.loops == 1 && lava.resets == 1 && !forest.running && !desert.running && !night.running,
+                "Lava plays its supplied looping music and stops other maps");
+        lavaMusic.pause(); lavaMusic.resume();
+        check(lava.running && lava.loops == 2 && lava.resets == 1, "Lava resumes from current position after pause");
+        new MapMusic("/project/game/Map/forest.jpg").start();
+        check(!lava.running && forest.running, "Changing away from Lava stops its song");
+        new MapMusic("/project/game/Map/unknown.jpg").start();
+        check(!forest.running && !desert.running && !night.running && !lava.running, "Unknown maps do not play unrelated music");
         VampireSurvivorsGame game = new VampireSurvivorsGame();
         MapMusic gameMusic = (MapMusic) field(game.getClass(), "mapMusic").get(game); gameMusic.start();
         LevelManager manager = (LevelManager) field(game.getClass(), "levelManager").get(game);
@@ -74,6 +82,6 @@ public class MapMusicTest {
         var restart = game.getClass().getDeclaredMethod("initGame"); restart.setAccessible(true); restart.invoke(game);
         check(forest.running && forest.resets == resets + 1, "Restarted run restarts the correct map song");
         field(game.getClass(), "running").set(game, false); gameMusic.stop();
-        System.out.println("PASS: three map songs, PCM decode, looping, map changes, pause and resume, level-up, death and restart");
+        System.out.println("PASS: four map songs including Lava, PCM decode, looping, map changes, pause and resume, level-up, death and restart");
     }
 }

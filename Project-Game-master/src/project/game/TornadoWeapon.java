@@ -1,6 +1,7 @@
 package project.game;
 
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
@@ -138,8 +139,14 @@ public class TornadoWeapon extends Weapon {
         for (Storm storm : storms) {
             long frameTime = storm.fadingAt >= 0 ? 5 * 80 + animationTime - storm.fadingAt
                     : (animationTime - storm.born) % (5 * 80);
+            int screenX = (int) Math.round(storm.x - camX);
+            int screenY = (int) Math.round(storm.y - camY);
+            double opacity = storm.fadingAt < 0 ? 1
+                    : Math.max(0, 1 - (animationTime - storm.fadingAt) / (double) FADE_MILLIS);
+            g.setColor(new Color(0, 0, 0, (int) (85 * opacity)));
+            g.fillOval(screenX - 26, screenY + 9, 52, 14);
             g.drawImage(Animation.SPRITE.frameAt(frameTime, 80),
-                    (int) Math.round(storm.x - camX) - 48, (int) Math.round(storm.y - camY) - 76, 96, 96, null);
+                    screenX - 48, screenY - 76, 96, 96, null);
         }
         g.dispose();
     }

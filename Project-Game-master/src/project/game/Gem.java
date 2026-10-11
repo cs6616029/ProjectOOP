@@ -1,6 +1,7 @@
 package project.game;
 
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -57,6 +58,11 @@ public class Gem {
         Graphics2D spriteGraphics = (Graphics2D) g.create();
         spriteGraphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        int shadowWidth = width + 4;
+        int shadowHeight = Math.max(4, width / 3);
+        spriteGraphics.setColor(new Color(0, 0, 0, 90));
+        spriteGraphics.fillOval(screenX - shadowWidth / 2,
+                screenY + height / 2 - shadowHeight / 2, shadowWidth, shadowHeight);
         spriteGraphics.drawImage(icon, screenX - width / 2, screenY - height / 2, width, height, null);
         spriteGraphics.dispose();
     }

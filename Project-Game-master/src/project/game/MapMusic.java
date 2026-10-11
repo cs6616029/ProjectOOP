@@ -10,13 +10,15 @@ final class MapMusic {
             case "/project/game/Map/forest.jpg" -> SoundEffects.Effect.MUSIC_FOREST;
             case "/project/game/Map/desert.jpg" -> SoundEffects.Effect.MUSIC_DESERT;
             case "/project/game/Map/night.jpg" -> SoundEffects.Effect.MUSIC_NIGHT;
+            case "/project/game/Map/lava.jpg" -> SoundEffects.Effect.MUSIC_LAVA;
             default -> null;
         };
     }
 
     void start() {
         for (SoundEffects.Effect music : new SoundEffects.Effect[]{SoundEffects.Effect.MUSIC_FOREST,
-                SoundEffects.Effect.MUSIC_DESERT, SoundEffects.Effect.MUSIC_NIGHT}) SoundEffects.stop(music);
+                SoundEffects.Effect.MUSIC_DESERT, SoundEffects.Effect.MUSIC_NIGHT,
+                SoundEffects.Effect.MUSIC_LAVA}) SoundEffects.stop(music);
         started = track != null;
         if (started) SoundEffects.loop(track);
     }

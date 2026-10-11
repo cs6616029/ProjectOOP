@@ -48,6 +48,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private Player player;
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Gem> gems = new ArrayList<>();
+    private final List<HealthPickup> healthPickups = new ArrayList<>();
     private final List<VisualEffect> visualEffects = new ArrayList<>();
     private final List<DamageNumber> damageNumbers = new ArrayList<>();
     private final List<BossAttack> bossAttacks = new ArrayList<>();
@@ -164,6 +165,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         player = new Player(0, 0, characterType);
         enemies.clear();
         gems.clear();
+        healthPickups.clear();
         visualEffects.clear();
         damageNumbers.clear();
         bossAttacks.clear();
@@ -290,7 +292,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             return number.isFinished();
         });
         boolean goldenSword = characterType == Player.CharacterType.SURVIVOR
-                && SwordWeapon.hasMaxedLoadout(weapons, passiveItems);
+                && SwordWeapon.hasMaxedSword(weapons);
         for (Weapon weapon : weapons) {
             if (weapon instanceof SwordWeapon) ((SwordWeapon) weapon).setGoldenSlash(goldenSword);
             weapon.update(player, enemies, visualEffects, currentTime);
@@ -327,6 +329,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 SoundEffects.play(enemy.deathSound());
                 if (enemy.type == EnemyType.BOSS) {
                     visualEffects.add(VisualEffect.bossDeath(enemy.x, enemy.y, enemy.size));
+                    healthPickups.add(new HealthPickup(enemy.x, enemy.y, currentTime));
                     bossesDefeated++;
                     if (bossesDefeated == BOSS_SEQUENCE.length) {
                         gameWon = true;
@@ -370,6 +373,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             if (gameOver) return;
         }
 
+        healthPickups.removeIf(pickup -> pickup.update(player, currentTime));
         Iterator<Gem> gIt = gems.iterator();
         while (gIt.hasNext()) {
             Gem gem = gIt.next();
@@ -474,6 +478,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (BossAttack attack : bossAttacks) attack.draw(dbg, cameraX, cameraY);
 
         for (Gem gem : gems) gem.draw(dbg, cameraX, cameraY);
+        for (HealthPickup pickup : healthPickups) pickup.draw(dbg, cameraX, cameraY, gameTimeMillis);
         for (Enemy enemy : enemies) enemy.draw(dbg, cameraX, cameraY);
         for (Weapon weapon : weapons) {
             if (!(weapon instanceof LaserWeapon)) weapon.draw(dbg, player, cameraX, cameraY);

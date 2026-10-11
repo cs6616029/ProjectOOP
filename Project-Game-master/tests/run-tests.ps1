@@ -39,6 +39,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Sound feedback checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Map music checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.EnemyDeathSoundTest
 if ($LASTEXITCODE -ne 0) { throw 'Enemy death sound checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.HealthPickupTest
+if ($LASTEXITCODE -ne 0) { throw 'Boss health pickup checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.WeaponScalingTest
 if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LaserTravelTest

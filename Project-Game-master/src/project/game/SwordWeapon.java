@@ -11,6 +11,8 @@ public class SwordWeapon extends Weapon {
             GifAnimation.load("/project/game/sword/aFwslc.gif");
 
     private long lastAttackTime = 0;
+    private static final long GOLDEN_COOLDOWN = 2000;
+    private long lastGoldenAttackTime = -1;
     private static final long STARTING_COOLDOWN = 1500;
     private boolean isAttacking = false;
     private long attackStartTime = 0;
@@ -25,11 +27,8 @@ public class SwordWeapon extends Weapon {
 
     void setGoldenSlash(boolean enabled) { goldenSlash = enabled; }
 
-    static boolean hasMaxedLoadout(List<Weapon> weapons, List<PassiveItem> passives) {
-        return weapons.stream().filter(w -> w.getLevel() > 0).count() == 3
-                && weapons.stream().allMatch(w -> w.getLevel() == 0 || w.getLevel() == 5)
-                && passives.size() == PassiveItem.ItemType.values().length
-                && passives.stream().allMatch(p -> p.getLevel() == p.getMaxLevel());
+    static boolean hasMaxedSword(List<Weapon> weapons) {
+        return weapons.stream().anyMatch(w -> w instanceof SwordWeapon && w.getLevel() == 5);
     }
 
     private long currentAttackDuration() { return goldenAttack ? 300 : attackDuration; }
@@ -52,6 +51,10 @@ public class SwordWeapon extends Weapon {
         long effectiveCooldown = (long) (baseCooldown * player.attackCooldownMultiplier);
 
         if (currentTime - lastAttackTime >= effectiveCooldown) {
+            long goldenCooldown = Math.max(1, (long) (GOLDEN_COOLDOWN / 2 * player.attackCooldownMultiplier)) * 2;
+            goldenAttack = goldenSlash && !goldenAttack && (lastGoldenAttackTime < 0
+                    || currentTime - lastGoldenAttackTime >= goldenCooldown);
+            if (goldenAttack) lastGoldenAttackTime = currentTime;
             SoundEffects.play(SoundEffects.Effect.SWORD);
             attackRadius = scaleStat(82, 10);
             int damage = getDamage();
@@ -71,7 +74,7 @@ public class SwordWeapon extends Weapon {
                     double difference = Math.atan2(ey, ex) - attackAngle;
                     double angleDifference = Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference)));
                     double edgeAllowance = dist <= enemyRadius ? Math.PI : Math.asin(enemyRadius / dist);
-                    if (angleDifference <= SLASH_HALF_ANGLE + edgeAllowance) {
+                    if (goldenAttack || angleDifference <= SLASH_HALF_ANGLE + edgeAllowance) {
                         enemy.takeDamage(damage);
                         visualEffects.add(VisualEffect.swordHit(enemy.x, enemy.y));
                     }
@@ -79,7 +82,6 @@ public class SwordWeapon extends Weapon {
             }
 
             isAttacking = true;
-            goldenAttack = goldenSlash;
             attackStartTime = currentTime;
             lastAttackTime = currentTime;
         }
@@ -99,18 +101,21 @@ public class SwordWeapon extends Weapon {
         BufferedImage frame = goldenAttack ? GoldenAnimation.SPRITE.frameAt(elapsed, 60) : SLASH_ANIMATION.frameAt(elapsed);
         double renderWidth = attackRadius * 2.4;
         double renderHeight = renderWidth * frame.getHeight() / frame.getWidth();
-        double centerX = player.x - camX + Math.cos(attackAngle) * attackRadius * 0.25;
-        double centerY = player.y - camY + Math.sin(attackAngle) * attackRadius * 0.25;
-
-        AffineTransform transform = new AffineTransform();
-        transform.translate(centerX, centerY);
-        transform.rotate(attackAngle);
-        transform.scale(renderWidth / frame.getWidth(), renderHeight / frame.getHeight());
-        transform.translate(-frame.getWidth() / 2.0, -frame.getHeight() / 2.0);
         Graphics2D slash = (Graphics2D) g.create();
         if (goldenAttack) slash.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
                 java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        slash.drawImage(frame, transform, null);
+        int arcs = goldenAttack ? 4 : 1;
+        for (int i = 0; i < arcs; i++) {
+            double angle = attackAngle + i * Math.PI / 2
+                    + (goldenAttack ? elapsed / 300.0 * Math.PI * 2 : 0);
+            AffineTransform transform = new AffineTransform();
+            transform.translate(player.x - camX + Math.cos(angle) * attackRadius * .25,
+                    player.y - camY + Math.sin(angle) * attackRadius * .25);
+            transform.rotate(angle);
+            transform.scale(renderWidth / frame.getWidth(), renderHeight / frame.getHeight());
+            transform.translate(-frame.getWidth() / 2.0, -frame.getHeight() / 2.0);
+            slash.drawImage(frame, transform, null);
+        }
         slash.dispose();
     }
 }

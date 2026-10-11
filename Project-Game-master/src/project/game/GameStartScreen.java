@@ -90,7 +90,7 @@ public final class GameStartScreen extends JPanel {
             hero(g,i,cx,290,i==1?138:128);
         }
         drawButton(g,primaryButton(),"START GAME  >",true,primaryButtonHovered);
-        centered(g,"Pick your hero. Find your world. Face the horde.",13,WHITE,400,478);
+        centered(g,"Pick your hero. Find your world.",13,WHITE,400,478);
         centered(g,"W A S D / ARROWS TO MOVE     |     AUTO ATTACK",12,MUTED,400,535);
         centered(g,"ENTER TO BEGIN",11,GOLD,400,556);
     }

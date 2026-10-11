@@ -37,6 +37,7 @@ public class SwordWeapon extends Weapon {
         long effectiveCooldown = (long) (baseCooldown * player.attackCooldownMultiplier);
 
         if (currentTime - lastAttackTime >= effectiveCooldown) {
+            SoundEffects.play(SoundEffects.Effect.SWORD);
             attackRadius = scaleStat(82, 10);
             int damage = getDamage();
 

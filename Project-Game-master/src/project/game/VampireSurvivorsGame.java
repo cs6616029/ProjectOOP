@@ -452,10 +452,15 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         for (Gem gem : gems) gem.draw(dbg, cameraX, cameraY);
         for (Enemy enemy : enemies) enemy.draw(dbg, cameraX, cameraY);
-        for (Weapon weapon : weapons) weapon.draw(dbg, player, cameraX, cameraY);
+        for (Weapon weapon : weapons) {
+            if (!(weapon instanceof LaserWeapon)) weapon.draw(dbg, player, cameraX, cameraY);
+        }
         for (VisualEffect ve : visualEffects) ve.draw(dbg, cameraX, cameraY);
 
         player.draw(dbg, cameraX, cameraY);
+        for (Weapon weapon : weapons) {
+            if (weapon instanceof LaserWeapon) weapon.draw(dbg, player, cameraX, cameraY);
+        }
         for (DamageNumber number : damageNumbers) number.draw(dbg, cameraX, cameraY);
         if (xpPickupEffect != null) {
             long pickupTime = System.nanoTime();

@@ -21,6 +21,7 @@ final class SoundEffects {
         BOSS_DEATH("boss-death.wav"),
         LEVEL_UP("level-up.wav"),
         LASER("Laser (1).wav"),
+        SWORD("sword_woosh.wav"),
         FLAME("flames-effect.wav"),
         EXPLOSION("explosion.wav"),
         WALKING("walking_6QdYC8X.wav");
@@ -40,7 +41,11 @@ final class SoundEffects {
 
     static synchronized void play(Effect effect) {
         Clip clip = getClip(effect);
-        if (clip == null || clip.isRunning()) return;
+        if (clip == null) return;
+        if (clip.isRunning()) {
+            if (effect != Effect.SWORD) return;
+            clip.stop();
+        }
 
         clip.setFramePosition(0);
         clip.start();

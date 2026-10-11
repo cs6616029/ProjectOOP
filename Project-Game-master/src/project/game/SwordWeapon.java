@@ -56,6 +56,7 @@ public class SwordWeapon extends Weapon {
                     double edgeAllowance = dist <= enemyRadius ? Math.PI : Math.asin(enemyRadius / dist);
                     if (angleDifference <= SLASH_HALF_ANGLE + edgeAllowance) {
                         enemy.hp -= damage;
+                        visualEffects.add(VisualEffect.swordHit(enemy.x, enemy.y));
                     }
                 }
             }

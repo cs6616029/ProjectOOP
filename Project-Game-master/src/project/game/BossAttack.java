@@ -6,25 +6,28 @@ import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-/** Boss projectiles and slam effects use the game's paused clock. */
+/** Enemy projectiles and boss effects use the game's paused clock. */
 final class BossAttack {
     static final int SWORD_WAVE_WIDTH = 160;
     static final int SWORD_WAVE_RADIUS = 56;
     static final int OGRE_SLAM_RADIUS = 260;
     static final double OGRE_SLAM_HEIGHT_SCALE = 0.35;
+    static final int LIGHTNING_RADIUS = 56;
+    private static final int LIGHTNING_FRAME_DURATION = 70;
     private static final int SLAM_FRAME_COUNT = 11;
     private static final int SLAM_FRAME_DURATION = 45;
     private final Enemy owner;
     private final double velocityX, velocityY;
     private final int radius, damage;
     private final Color color;
-    private final long expiresAt;
+    private long expiresAt;
     private final boolean slam;
     private final boolean swordWave;
     private final long spawnTime;
     private long lastUpdateTime;
     private boolean finished, impactChecked;
     private boolean dragonFire;
+    private boolean lightningStrike;
     private double x, y;
 
     private BossAttack(Enemy owner, double x, double y, double angle, double speed,
@@ -59,6 +62,19 @@ final class BossAttack {
         return fire;
     }
 
+    static BossAttack lightning(Enemy owner, double groundX, double groundY, long time) {
+        BossAttack strike = new BossAttack(owner, groundX, groundY, 0, 0,
+                LIGHTNING_RADIUS, 14, Color.MAGENTA, time, false, false);
+        strike.lightningStrike = true;
+        strike.expiresAt = time + 7 * LIGHTNING_FRAME_DURATION;
+        return strike;
+    }
+
+    private static final class LightningAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load(
+                "/project/game/Monster/Boss/effects/lightning-violet.png", 7);
+    }
+
     private static final class SwordWaveAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.load(
                 "/project/game/Monster/Boss/effects/Effect_spear.png", 3);
@@ -89,6 +105,13 @@ final class BossAttack {
             return 0;
         }
         if (finished) return 0;
+        if (lightningStrike) {
+            lastUpdateTime = time;
+            if (impactChecked || time - spawnTime < 2 * LIGHTNING_FRAME_DURATION) return 0;
+            impactChecked = true;
+            double feetY = player.y + player.getRenderSize() / 2.0;
+            return Math.hypot(player.x - x, feetY - y) <= radius + player.size * 0.20 ? damage : 0;
+        }
         if (slam) {
             lastUpdateTime = time;
             if (impactChecked) return 0;
@@ -103,7 +126,8 @@ final class BossAttack {
         lastUpdateTime = time;
         x += velocityX * seconds;
         y += velocityY * seconds;
-        if (Line2D.ptSegDist(oldX, oldY, x, y, player.x, player.y) <= radius + player.size / 2.0) {
+        double playerRadius = owner.isBat() ? player.size * 0.20 : player.size / 2.0;
+        if (Line2D.ptSegDist(oldX, oldY, x, y, player.x, player.y) <= radius + playerRadius) {
             finished = true;
             if (dragonFire && effects != null) {
                 double dx = x - oldX, dy = y - oldY;
@@ -123,6 +147,13 @@ final class BossAttack {
         if (finished || owner.hp <= 0) return;
         Graphics2D g = (Graphics2D) graphics.create();
         int sx = (int) (x - camX), sy = (int) (y - camY);
+        if (lightningStrike) {
+            BufferedImage frame = LightningAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, LIGHTNING_FRAME_DURATION);
+            int size = 180;
+            g.drawImage(frame, sx - size / 2, sy - size * 7 / 8, size, size, null);
+            g.dispose();
+            return;
+        }
         if (slam) {
             BufferedImage frame = OgreSlamAnimation.SPRITE.frameAt(lastUpdateTime - spawnTime, SLAM_FRAME_DURATION);
             int width = radius * 2;

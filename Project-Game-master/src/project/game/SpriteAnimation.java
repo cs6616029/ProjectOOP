@@ -56,4 +56,36 @@ final class SpriteAnimation {
         int frameIndex = (int) ((timeMillis / frameDurationMillis) % frames.length);
         return frames[frameIndex];
     }
+
+    SpriteAnimation normalizeVisibleHeight(int targetHeight, int targetBaseline) {
+        int maximumHeight = 0, bottomEdge = 0;
+        for (BufferedImage frame : frames) {
+            int top = frame.getHeight(), bottom = -1;
+            for (int y = 0; y < frame.getHeight(); y++) {
+                for (int x = 0; x < frame.getWidth(); x++) {
+                    if ((frame.getRGB(x, y) >>> 24) != 0) {
+                        top = Math.min(top, y);
+                        bottom = Math.max(bottom, y);
+                    }
+                }
+            }
+            if (bottom >= top) maximumHeight = Math.max(maximumHeight, bottom - top + 1);
+            bottomEdge = Math.max(bottomEdge, bottom + 1);
+        }
+        if (maximumHeight == 0) return this;
+        double scale = targetHeight / (double) maximumHeight;
+        BufferedImage[] normalized = new BufferedImage[frames.length];
+        for (int i = 0; i < frames.length; i++) {
+            BufferedImage frame = frames[i];
+            normalized[i] = new BufferedImage(frame.getWidth(), frame.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            var g = normalized[i].createGraphics();
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g.translate(frame.getWidth() / 2.0, targetBaseline);
+            g.scale(scale, scale);
+            g.drawImage(frame, -frame.getWidth() / 2, -bottomEdge, null);
+            g.dispose();
+        }
+        return new SpriteAnimation(normalized);
+    }
 }

@@ -8,7 +8,7 @@ import java.util.List;
 
 final class BossSkill {
     enum Kind {
-        CHARGER("Warlord", "CHARGE", 4500, 1000),
+        CHARGER("White Mage", "LIGHTNING", 4500, 1000),
         DRAGON("Dragon", "FIRE SPREAD", 4000, 900),
         OGRE("Ogre", "GROUND SLAM", 5000, 1100),
         SKELETON("Skeleton", "SWORD WAVE", 4200, 1000);
@@ -24,32 +24,21 @@ final class BossSkill {
     }
 
     final Kind kind;
-    private long nextAttack = -1, releaseTime, dashUntil;
-    private boolean warning, charging;
+    private long nextAttack = -1, releaseTime;
+    private boolean warning;
     private double originX, originY, angle;
-    private long lastUpdate;
     private int ogreFootOffset;
+    private double lightningX, lightningY;
 
     BossSkill(Kind kind) { this.kind = kind; }
 
-    boolean isCharging() { return charging; }
+    boolean isCharging() { return false; }
     boolean isWindingUp() { return warning; }
 
     void update(Enemy boss, Player player, List<BossAttack> attacks, long time) {
         if (boss.hp <= 0) return;
         if (nextAttack < 0) {
             nextAttack = time + 2500;
-            lastUpdate = time;
-        }
-        double seconds = Math.max(0, time - lastUpdate) / 1000.0;
-        lastUpdate = time;
-        if (charging) {
-            if (time >= dashUntil) charging = false;
-            else {
-                boss.x += Math.cos(angle) * 540 * seconds;
-                boss.y += Math.sin(angle) * 540 * seconds;
-            }
-            return;
         }
         if (warning) {
             if (time < releaseTime) return;
@@ -57,8 +46,7 @@ final class BossSkill {
             nextAttack = time + kind.cooldown;
             switch (kind) {
                 case CHARGER:
-                    charging = true;
-                    dashUntil = time + 900;
+                    attacks.add(BossAttack.lightning(boss, lightningX, lightningY, time));
                     break;
                 case DRAGON:
                     for (int i = -1; i <= 1; i++) {
@@ -80,6 +68,8 @@ final class BossSkill {
             originX = boss.x;
             originY = boss.y;
             ogreFootOffset = boss.size / 2;
+            lightningX = player.x;
+            lightningY = player.y + player.getRenderSize() / 2.0;
             angle = Math.atan2(player.y - boss.y, player.x - boss.x);
         }
     }
@@ -89,7 +79,15 @@ final class BossSkill {
         Graphics2D g = (Graphics2D) graphics.create();
         int sx = (int) (originX - camX), sy = (int) (originY - camY);
         g.setColor(new Color(255, 80, 40, 65));
-        if (kind == Kind.OGRE) {
+        if (kind == Kind.CHARGER) {
+            int targetX = (int) (lightningX - camX), targetY = (int) (lightningY - camY);
+            int radius = BossAttack.LIGHTNING_RADIUS;
+            g.setColor(new Color(190, 80, 255, 65));
+            g.fillOval(targetX - radius, targetY - radius, radius * 2, radius * 2);
+            g.setColor(new Color(230, 130, 255));
+            g.setStroke(new BasicStroke(3));
+            g.drawOval(targetX - radius, targetY - radius, radius * 2, radius * 2);
+        } else if (kind == Kind.OGRE) {
             int radius = BossAttack.OGRE_SLAM_RADIUS;
             int halfHeight = (int) Math.round(radius * BossAttack.OGRE_SLAM_HEIGHT_SCALE);
             int groundY = sy + ogreFootOffset;
@@ -99,8 +97,7 @@ final class BossSkill {
             g.drawOval(sx - radius, groundY - halfHeight, radius * 2, halfHeight * 2);
         } else {
             int rays = kind == Kind.SKELETON ? 8 : (kind == Kind.DRAGON ? 3 : 1);
-            g.setStroke(new BasicStroke(kind == Kind.CHARGER ? 250
-                    : (kind == Kind.SKELETON ? BossAttack.SWORD_WAVE_RADIUS * 2 : 6)));
+            g.setStroke(new BasicStroke(kind == Kind.SKELETON ? BossAttack.SWORD_WAVE_RADIUS * 2 : 6));
             for (int i = 0; i < rays; i++) {
                 double rayAngle = angle + (kind == Kind.SKELETON ? i * Math.PI / 4
                         : (kind == Kind.DRAGON ? (i - 1) * 0.24 : 0));

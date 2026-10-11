@@ -107,13 +107,18 @@ public class Player {
             case STRONG_BOY -> 1.5;
             case IRON_GUARDIAN -> 1.25;
         };
-        idleSprite = SpriteAnimation.load(characterType.getIdleSpriteResource(), WALK_FRAME_COUNT);
-        walkSprite = SpriteAnimation.load(characterType.getWalkSpriteResource(), WALK_FRAME_COUNT);
+        idleSprite = loadCharacterSprite(characterType.getIdleSpriteResource(), characterType);
+        walkSprite = loadCharacterSprite(characterType.getWalkSpriteResource(), characterType);
         southWalkSprite = characterType.southWalkSpriteResource == null ? walkSprite
-                : SpriteAnimation.load(characterType.southWalkSpriteResource, WALK_FRAME_COUNT);
+                : loadCharacterSprite(characterType.southWalkSpriteResource, characterType);
         northWalkSprite = characterType.northWalkSpriteResource == null ? walkSprite
-                : SpriteAnimation.load(characterType.northWalkSpriteResource, WALK_FRAME_COUNT);
+                : loadCharacterSprite(characterType.northWalkSpriteResource, characterType);
         idleFrameIndex = characterType.idleFrameIndex;
+    }
+
+    private static SpriteAnimation loadCharacterSprite(String path, CharacterType type) {
+        SpriteAnimation sprite = SpriteAnimation.load(path, WALK_FRAME_COUNT);
+        return type == CharacterType.SURVIVOR ? sprite.normalizeVisibleHeight(88, 112) : sprite;
     }
 
     public void move(int dx, int dy) {
@@ -166,6 +171,30 @@ public class Player {
             mirrorFrame = false;
         }
         boolean flash = isInvincible && (gameTimeMillis / 100) % 2 == 0;
+        int shadowWidth = (int) Math.round(renderSize * 0.55);
+        int shadowHeight = Math.max(8, (int) Math.round(renderSize * 0.14));
+        int visibleBottom = frame.getHeight();
+        findFeet: for (int row = frame.getHeight() - 1; row >= 0; row--) {
+            for (int column = 0; column < frame.getWidth(); column++) {
+                if ((frame.getRGB(column, row) >>> 24) != 0) {
+                    visibleBottom = row + 1;
+                    break findFeet;
+                }
+            }
+        }
+        int footY = screenY - renderSize / 2
+                + (int) Math.round(visibleBottom * renderSize / (double) frame.getHeight());
+        Graphics2D shadowGraphics = (Graphics2D) g.create();
+        shadowGraphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+                java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+        shadowGraphics.setColor(new Color(0, 0, 0, 45));
+        shadowGraphics.fillOval(screenX - shadowWidth / 2, footY - shadowHeight / 2,
+                shadowWidth, shadowHeight);
+        int innerWidth = (int) Math.round(shadowWidth * 0.75);
+        int innerHeight = (int) Math.round(shadowHeight * 0.7);
+        shadowGraphics.fillOval(screenX - innerWidth / 2, footY - innerHeight / 2,
+                innerWidth, innerHeight);
+        shadowGraphics.dispose();
         if (mirrorFrame) {
             g.drawImage(frame, screenX + renderSize / 2, screenY - renderSize / 2,
                     screenX - renderSize / 2, screenY + renderSize / 2,

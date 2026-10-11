@@ -38,6 +38,27 @@ public class StrongBoyCharacterTest {
     }
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
+        Player swordsman = new Player(0, 0);
+        for (String direction : new String[] {"idleSprite", "walkSprite", "southWalkSprite", "northWalkSprite"}) {
+            SpriteAnimation sprite = (SpriteAnimation) get(swordsman, direction);
+            int maximumHeight = 0, baseline = 0;
+            for (int i = 0; i < 8; i++) {
+                BufferedImage frame = sprite.frameAt(i, 1);
+                int top = frame.getHeight(), bottom = -1;
+                for (int y = 0; y < frame.getHeight(); y++) {
+                    for (int x = 0; x < frame.getWidth(); x++) {
+                        if ((frame.getRGB(x, y) >>> 24) != 0) {
+                            top = Math.min(top, y);
+                            bottom = Math.max(bottom, y);
+                        }
+                    }
+                }
+                maximumHeight = Math.max(maximumHeight, bottom - top + 1);
+                baseline = Math.max(baseline, bottom + 1);
+            }
+            check(Math.abs(maximumHeight - 88) <= 1, "Swordsman has consistent height in " + direction);
+            check(baseline == 112, "Swordsman feet align across directions: " + direction);
+        }
         for (String resource : new String[]{"Strongman.png", "Strongman-South-East.png", "Strongman-North.png"}) {
             BufferedImage sheet = ImageIO.read(StrongBoyCharacterTest.class.getResource(
                     "/project/game/Monster/Player/" + resource));

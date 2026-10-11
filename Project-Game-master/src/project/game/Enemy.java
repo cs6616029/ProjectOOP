@@ -35,6 +35,11 @@ public class Enemy {
     private final SpriteAnimation sprite;
     private boolean facingLeft;
     private final BossSkill bossSkill;
+    private long nextRangedAttack = -1;
+
+    boolean isBat() {
+        return sprite == FAST_SPRITES[1];
+    }
 
     public Enemy(double x, double y, EnemyType type, int playerLevel) {
         this(x, y, type, playerLevel, null);
@@ -90,8 +95,14 @@ public class Enemy {
         facingLeft = targetX < x;
         if (bossSkill != null && (bossSkill.isCharging() || bossSkill.isWindingUp())) return;
         double angle = Math.atan2(targetY - y, targetX - x);
-        x += Math.cos(angle) * speed;
-        y += Math.sin(angle) * speed;
+        double movement = speed;
+        if (isBat()) {
+            double distance = Math.hypot(targetX - x, targetY - y);
+            if (distance < 160) movement = -speed;
+            else if (distance <= 260) movement = 0;
+        }
+        x += Math.cos(angle) * movement;
+        y += Math.sin(angle) * movement;
     }
 
     public Rectangle getBounds() {
@@ -109,6 +120,17 @@ public class Enemy {
 
     void updateBossSkill(Player player, List<BossAttack> attacks, long time) {
         if (bossSkill != null) bossSkill.update(this, player, attacks, time);
+    }
+
+    void updateRangedAttack(Player player, List<BossAttack> attacks, long time) {
+        if (!isBat() || hp <= 0) return;
+        // Use gameplay time so pausing also pauses the firing cooldown.
+        if (nextRangedAttack < 0) nextRangedAttack = time + 1000;
+        if (time < nextRangedAttack || Math.hypot(player.x - x, player.y - y) > 450) return;
+        double angle = Math.atan2(player.y - y, player.x - x);
+        attacks.add(BossAttack.projectile(this, angle, 210, 7, damage,
+                new Color(190, 90, 255), time));
+        nextRangedAttack = time + 2000;
     }
 
     int getContactDamage() {

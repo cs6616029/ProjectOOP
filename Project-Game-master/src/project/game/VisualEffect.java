@@ -14,6 +14,18 @@ public class VisualEffect {
     private boolean bulletHit;
     private boolean laserHit;
     private boolean enemyDeath;
+    private boolean swordHit;
+
+    private static final class SwordHitAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.loadGrid("/project/game/effects/sword-hit-blood.png", 6, 6);
+    }
+
+    public static VisualEffect swordHit(double x, double y) {
+        // The blood animation ends at cell 21; later atlas cells are empty or unrelated.
+        VisualEffect effect = new VisualEffect(x, y, 50, Color.RED, 44);
+        effect.swordHit = true;
+        return effect;
+    }
 
     private static final class EnemyDeathAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/enemy-death.png", 9);
@@ -86,6 +98,11 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (swordHit) {
+            g.drawImage(SwordHitAnimation.SPRITE.frameAt(currentFrame, 2),
+                    sx - radius, sy - radius, radius * 2, radius * 2, null);
+            return;
+        }
         if (enemyDeath) {
             g.drawImage(EnemyDeathAnimation.SPRITE.frameAt(currentFrame, 3),
                     sx - radius, sy - radius, radius * 2, radius * 2, null);

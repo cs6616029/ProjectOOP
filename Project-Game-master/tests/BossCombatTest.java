@@ -60,6 +60,24 @@ public final class BossCombatTest {
         }
         smoke.update(distantPlayer, 1495);
         check(smoke.isFinished(), "Ogre smoke finishes once after all eleven frames");
+        BufferedImage lightningSheet = javax.imageio.ImageIO.read(BossCombatTest.class.getResource(
+                "/project/game/Monster/Boss/effects/lightning-violet.png"));
+        BossAttack lightning = BossAttack.lightning(previewDragon, 100, 220, 1000);
+        for (int frame = 0; frame < 7; frame++) {
+            lightning.update(distantPlayer, 1000 + frame * 70);
+            BufferedImage actual = new BufferedImage(320, 320, BufferedImage.TYPE_INT_ARGB);
+            var g = actual.createGraphics();
+            lightning.draw(g, 0, 0);
+            g.dispose();
+            BufferedImage expected = new BufferedImage(320, 320, BufferedImage.TYPE_INT_ARGB);
+            g = expected.createGraphics();
+            g.drawImage(lightningSheet.getSubimage(frame * 128, 0, 128, 128), 10, 63, 180, 180, null);
+            g.dispose();
+            check(java.util.Arrays.equals(actual.getRGB(0, 0, 320, 320, null, 0, 320),
+                    expected.getRGB(0, 0, 320, 320, null, 0, 320)), "Lightning supplied frame and ground anchor");
+        }
+        lightning.update(distantPlayer, 1490);
+        check(lightning.isFinished(), "Lightning plays once and expires after seven frames");
         for (int direction = 0; direction < 8; direction++) {
             double angle = direction * Math.PI / 4;
             BossAttack flame = BossAttack.dragonFire(previewDragon, angle, 1000);
@@ -99,20 +117,27 @@ public final class BossCombatTest {
             var g = warning.createGraphics();
             boss.drawBossWarning(g, -450, -337);
             g.dispose();
-            check(warning.getRGB(460, kind == BossSkill.Kind.OGRE ? 337 + boss.size / 2 : 337) != 0,
+            int warningX = kind == BossSkill.Kind.CHARGER ? 450 + (int) target.x : 460;
+            int warningY = kind == BossSkill.Kind.CHARGER ? 337 + (int) target.y + target.getRenderSize() / 2
+                    : (kind == BossSkill.Kind.OGRE ? 337 + boss.size / 2 : 337);
+            check(warning.getRGB(warningX, warningY) != 0,
                     kind + " must draw warning area at the attack location");
             long release = 3500 + kind.windup;
             boss.updateBossSkill(target, attacks, release);
             switch (kind) {
                 case CHARGER:
-                    boss.updateBossSkill(target, attacks, release + 400);
-                    check(boss.x > 200 && Math.abs(boss.y) < 0.001 && boss.getContactDamage() == 14,
-                            "Charge follows locked direction with increased contact damage");
+                    check(attacks.size() == 1, "White mage casts one lightning strike");
+                    check(attacks.get(0).update(target, release + 139) == 0,
+                            "Lightning deals no damage before the visible strike frame");
+                    check(attacks.get(0).update(target, release + 140) == 14
+                            && attacks.get(0).update(target, release + 150) == 0,
+                            "Lightning damages its target once when it strikes");
+                    check(boss.x == oldX && boss.getContactDamage() == 7, "White mage casts instead of charging");
+                    BossAttack dodgedLightning = BossAttack.lightning(boss, target.x,
+                            target.y + target.getRenderSize() / 2.0, release);
                     target.y = 400;
-                    boss.updateBossSkill(target, attacks, release + 500);
-                    check(Math.abs(boss.y) < 0.001, "Charge must not home onto dodging player");
-                    boss.updateBossSkill(target, attacks, release + 901);
-                    check(boss.getContactDamage() == 7, "Charge damage resets after dash");
+                    check(dodgedLightning.update(target, release + 140) == 0,
+                            "Walking away from the locked warning position dodges lightning");
                     break;
                 case DRAGON:
                     check(attacks.size() == 3, "Dragon fires three projectiles");

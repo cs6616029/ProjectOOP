@@ -54,6 +54,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
     private final LevelManager levelManager = new LevelManager();
     private LevelUpEffect levelUpEffect;
+    private BossSpawnAlert bossSpawnAlert;
+    private GameOverAnimation gameOverAnimation;
     private XPPickupEffect xpPickupEffect;
     private int displayedLevel = 1;
 
@@ -135,6 +137,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         levelManager.reset();
         levelUpEffect = null;
+        bossSpawnAlert = null;
+        gameOverAnimation = null;
         xpPickupEffect = null;
         displayedLevel = 1;
 
@@ -296,6 +300,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             }
 
             enemy.updateBossSkill(player, bossAttacks, currentTime);
+            enemy.updateRangedAttack(player, bossAttacks, currentTime);
 
             // แก้ไขการรับดาเมจ ให้เช็ค Invincibility Frames
             if (enemy.isTouching(player)) {
@@ -398,6 +403,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         boss.hp += (int) (bossWave * 35 * Enemy.BOSS_HEALTH_MULTIPLIER);
         boss.maxHp = boss.hp;
         enemies.add(boss);
+        bossSpawnAlert = new BossSpawnAlert(gameTimeMillis);
     }
 
     private synchronized void renderToBuffer() {
@@ -421,6 +427,10 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             long pickupTime = System.nanoTime();
             if (gameOver || xpPickupEffect.isFinished(pickupTime)) xpPickupEffect = null;
             else xpPickupEffect.draw(dbg, player, cameraX, cameraY, pickupTime);
+        }
+        if (bossSpawnAlert != null) {
+            if (gameOver || gameWon || bossSpawnAlert.isFinished(gameTimeMillis)) bossSpawnAlert = null;
+            else bossSpawnAlert.draw(dbg, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100, gameTimeMillis);
         }
         drawUI(dbg);
         long presentationTime = System.nanoTime();
@@ -468,20 +478,14 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void drawUI(Graphics2D g) {
-        g.setColor(Color.RED);
-        g.fillRect(20, 20, 200, 15);
-        g.setColor(Color.GREEN);
-        g.fillRect(20, 20, (int) (200 * ((double) player.hp / player.maxHp)), 15);
+        HealthBar.draw(g, 20, 16, player.hp, player.maxHp);
         g.setColor(Color.WHITE);
-        g.drawRect(20, 20, 200, 15);
-        g.setFont(new Font("SansSerif", Font.BOLD, 12));
-        g.drawString("HP: " + player.hp + "/" + player.maxHp, 25, 32);
 
-        levelManager.drawXPBar(g, 20, 42, 200, 10);
+        levelManager.drawXPBar(g, 20, 64, 296, 43);
 
         g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        g.drawString("Level: " + levelManager.getLevel(), 230, 32);
-        g.drawString("Score: " + score, 230, 50);
+        g.drawString("Level: " + levelManager.getLevel(), 330, 32);
+        g.drawString("Score: " + score, 330, 50);
 
         g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.setColor(Color.LIGHT_GRAY);
@@ -492,7 +496,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (PassiveItem p : passiveItems) {
             if (p.getLevel() > 0) itemSummary.append(p.getName()).append(": Lv.").append(p.getLevel()).append(" | ");
         }
-        g.drawString(itemSummary.toString(), 20, 72);
+        g.drawString(itemSummary.toString(), 20, 126);
 
         long minutes = elapsedSeconds / 60;
         long seconds = elapsedSeconds % 60;
@@ -508,7 +512,12 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
             g.setColor(gameWon ? new Color(105, 235, 145) : Color.RED);
             g.setFont(new Font("SansSerif", Font.BOLD, 48));
-            drawCentered(g, gameWon ? "YOU WIN!" : "GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 45);
+            if (gameWon) {
+                drawCentered(g, "YOU WIN!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 45);
+            } else {
+                if (gameOverAnimation == null) gameOverAnimation = new GameOverAnimation(System.nanoTime());
+                gameOverAnimation.draw(g, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 128, System.nanoTime());
+            }
             g.setColor(Color.WHITE);
             g.setFont(new Font("SansSerif", Font.PLAIN, 20));
             drawCentered(g, "Survived Time: " + timeStr, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);

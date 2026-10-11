@@ -225,12 +225,7 @@ public class LevelManager {
     }
 
     public synchronized void drawXPBar(Graphics2D g, int x, int y, int width, int height) {
-        g.setColor(Color.DARK_GRAY);
-        g.fillRect(x, y, width, height);
-        g.setColor(Color.CYAN);
-        g.fillRect(x, y, (int) (width * ((double) xp / xpToNextLevel)), height);
-        g.setColor(Color.WHITE);
-        g.drawRect(x, y, width, height);
+        HealthBar.drawXP(g, x, y, xp, xpToNextLevel, width, height);
     }
 
     public synchronized int getLevel() { return level; }

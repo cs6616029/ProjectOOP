@@ -484,7 +484,7 @@ public class ISEKAISurvivors extends JPanel implements Runnable, KeyListener {
 
         Enemy boss = new Enemy(ex, ey, EnemyType.BOSS, levelManager.getLevel(),
                 BOSS_SEQUENCE[bossesDefeated]);
-        boss.hp += (int) (bossWave * 35 * Enemy.BOSS_HEALTH_MULTIPLIER);
+        boss.hp = Enemy.BOSS_BASE_HEALTH * (bossesDefeated + 1);
         boss.maxHp = boss.hp;
         enemies.add(boss);
         bossSpawnAlert = new BossSpawnAlert(gameTimeMillis);

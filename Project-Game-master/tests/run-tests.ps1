@@ -68,3 +68,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Gun collision checks failed' }
 
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.FrameTimingTest
 if ($LASTEXITCODE -ne 0) { throw 'Frame timing checks failed' }
+
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.BossHealthTest
+if ($LASTEXITCODE -ne 0) { throw 'Boss health checks failed' }

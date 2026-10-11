@@ -57,6 +57,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private LevelUpEffect levelUpEffect;
     private BossSpawnAlert bossSpawnAlert;
     private GameOverAnimation gameOverAnimation;
+    private VictoryMenuOverlay victoryMenu;
+    private boolean victoryHovered;
     private XPPickupEffect xpPickupEffect;
     private int displayedLevel = 1;
 
@@ -126,11 +128,12 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             @Override
             public void mouseMoved(MouseEvent event) {
                 synchronized (VampireSurvivorsGame.this) {
+                    victoryHovered = gameWon && victoryMenuButtonBounds().contains(event.getPoint());
                     boolean overUpgrade = !paused && !gameOver && !gameWon && levelManager.handleMouseMove(event, SCREEN_WIDTH);
                     pauseHoveredButton = !paused ? -1 : resumeButtonBounds().contains(event.getPoint()) ? 0
                             : restartButtonBounds().contains(event.getPoint()) ? 1
                             : mainMenuButtonBounds().contains(event.getPoint()) ? 2 : -1;
-                    setCursor(java.awt.Cursor.getPredefinedCursor(pauseHoveredButton >= 0 || overUpgrade
+                    setCursor(java.awt.Cursor.getPredefinedCursor(pauseHoveredButton >= 0 || overUpgrade || victoryHovered
                             ? java.awt.Cursor.HAND_CURSOR : java.awt.Cursor.DEFAULT_CURSOR));
                 }
             }
@@ -139,6 +142,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
             public void mouseExited(MouseEvent event) {
                 synchronized (VampireSurvivorsGame.this) {
                     pauseHoveredButton = -1;
+                    victoryHovered = false;
                     levelManager.clearHover();
                     setCursor(java.awt.Cursor.getDefaultCursor());
                 }
@@ -168,6 +172,8 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         levelUpEffect = null;
         bossSpawnAlert = null;
         gameOverAnimation = null;
+        victoryMenu = null;
+        victoryHovered = false;
         xpPickupEffect = null;
         displayedLevel = 1;
 
@@ -520,6 +526,12 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private void drawUI(Graphics2D g) {
+        if (gameWon) {
+            long now = System.nanoTime();
+            if (victoryMenu == null) victoryMenu = new VictoryMenuOverlay(now);
+            victoryMenu.draw(g, SCREEN_WIDTH, SCREEN_HEIGHT, elapsedSeconds, score, victoryHovered, now);
+            return;
+        }
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         HealthBar.draw(g, 20, 16, player.hp, player.maxHp);
         g.setColor(Color.WHITE);
@@ -550,26 +562,18 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
 
         levelManager.drawLevelUpUI(g, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        if (gameOver || gameWon) {
+        if (gameOver) {
             g.setColor(new Color(0, 0, 0, 180));
             g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            g.setColor(gameWon ? new Color(105, 235, 145) : Color.RED);
+            g.setColor(Color.RED);
             g.setFont(new Font("SansSerif", Font.BOLD, 48));
-            if (gameWon) {
-                drawCentered(g, "YOU WIN!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 45);
-            } else {
-                if (gameOverAnimation == null) gameOverAnimation = new GameOverAnimation(System.nanoTime());
-                gameOverAnimation.draw(g, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 128, System.nanoTime());
-            }
+            if (gameOverAnimation == null) gameOverAnimation = new GameOverAnimation(System.nanoTime());
+            gameOverAnimation.draw(g, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 128, System.nanoTime());
             g.setColor(Color.WHITE);
             g.setFont(GameStartScreen.pixelFont(28));
             drawCentered(g, "Survived Time: " + timeStr, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
             drawCentered(g, "Final Score: " + score, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 36);
-            if (gameWon) {
-                drawPauseButton(g, victoryMenuButtonBounds(), "Main Menu");
-            } else {
-                drawCentered(g, "Press 'R' to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 72);
-            }
+            drawCentered(g, "Press 'R' to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 72);
         } else {
             PauseMenuOverlay.drawButton(g, pauseButtonBounds(), "PAUSE", false, false);
         }
@@ -578,15 +582,6 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private void drawPauseMenu(Graphics2D g) {
         PauseMenuOverlay.draw(g, SCREEN_WIDTH, SCREEN_HEIGHT, levelManager.getLevel(), elapsedSeconds, score,
                 resumeButtonBounds(), restartButtonBounds(), mainMenuButtonBounds(), pauseHoveredButton);
-    }
-
-    private void drawPauseButton(Graphics2D g, Rectangle bounds, String label) {
-        g.setColor(new Color(29, 50, 75));
-        g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 12, 12);
-        g.setColor(Color.WHITE);
-        g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 12, 12);
-        g.setFont(new Font("SansSerif", Font.BOLD, 20));
-        drawCentered(g, label, bounds.x + bounds.width / 2, bounds.y + 37);
     }
 
     private void handlePauseClick(MouseEvent event) {
@@ -642,7 +637,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     }
 
     private Rectangle victoryMenuButtonBounds() {
-        return new Rectangle(310, SCREEN_HEIGHT / 2 + 95, 280, 58);
+        return VictoryMenuOverlay.menuButtonBounds(SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
     private static void drawCentered(Graphics2D g, String text, int centerX, int baselineY) {

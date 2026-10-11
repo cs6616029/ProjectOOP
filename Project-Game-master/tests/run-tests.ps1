@@ -33,3 +33,5 @@ if ($LASTEXITCODE -ne 0) { throw 'Map selection checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Pause menu checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.BossVictoryTest
 if ($LASTEXITCODE -ne 0) { throw 'Boss victory checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.GunCollisionTest
+if ($LASTEXITCODE -ne 0) { throw 'Gun collision checks failed' }

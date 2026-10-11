@@ -277,6 +277,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                     }
                 } else {
                     SoundEffects.play(SoundEffects.Effect.ENEMY_DEATH);
+                    visualEffects.add(VisualEffect.enemyDeath(enemy.x, enemy.y, enemy.size));
                 }
                 int gemXp = (enemy.type == EnemyType.BOSS) ? 50 : 5;
                 gems.add(new Gem(enemy.x, enemy.y, gemXp, enemy.type == EnemyType.BOSS));

@@ -12,6 +12,28 @@ public class VisualEffect {
     private boolean explosion;
     private boolean bossDeath;
     private boolean bulletHit;
+    private boolean laserHit;
+    private boolean enemyDeath;
+
+    private static final class EnemyDeathAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/enemy-death.png", 9);
+    }
+
+    public static VisualEffect enemyDeath(double x, double y, int enemySize) {
+        VisualEffect effect = new VisualEffect(x, y, (int) Math.ceil(enemySize * 0.55), Color.YELLOW, 27);
+        effect.enemyDeath = true;
+        return effect;
+    }
+
+    private static final class LaserHitAnimation {
+        static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/laser-hit.png", 10);
+    }
+
+    public static VisualEffect laserHit(double x, double y, int radius) {
+        VisualEffect effect = new VisualEffect(x, y, radius, Color.RED, 30);
+        effect.laserHit = true;
+        return effect;
+    }
 
     private static final class BulletHitAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/bullet-hit.png", 10);
@@ -70,6 +92,16 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (enemyDeath) {
+            g.drawImage(EnemyDeathAnimation.SPRITE.frameAt(currentFrame, 3),
+                    sx - radius, sy - radius, radius * 2, radius * 2, null);
+            return;
+        }
+        if (laserHit) {
+            g.drawImage(LaserHitAnimation.SPRITE.frameAt(currentFrame, 3),
+                    sx - radius, sy - radius, radius * 2, radius * 2, null);
+            return;
+        }
         if (bulletHit) {
             g.drawImage(BulletHitAnimation.SPRITE.frameAt(currentFrame, 3),
                     sx - radius, sy - radius, radius * 2, radius * 2, null);

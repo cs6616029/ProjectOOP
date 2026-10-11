@@ -44,13 +44,15 @@ public class BossDeathEffectTest {
             update.setAccessible(true);
             update.invoke(game);
             List<VisualEffect> effects = (List<VisualEffect>) get(game, "visualEffects");
-            check(effects.size() == 1, kind + " death creates one effect; normal death creates none");
+            check(effects.size() == 2, kind + " death and normal death each create one effect");
             VisualEffect effect = effects.get(0);
             check(effect.x == boss.x && effect.y == boss.y, "Death effect stays at death position");
             check(effect.radius * 2 >= boss.size, "Explosion covers the boss");
             check(((List<Gem>) get(game, "gems")).size() == 2, "Death rewards preserved");
             update.invoke(game);
-            check(effects.size() == 1, "Death effect does not duplicate on next update");
+            check(effects.size() == 2, "Death effects do not duplicate on next update");
+            check(effects.get(1).x == normal.x && effects.get(1).y == normal.y,
+                    "Regular death effect stays at the enemy death position");
         }
 
         VisualEffect effect = VisualEffect.bossDeath(100, 200, 250);
@@ -69,6 +71,34 @@ public class BossDeathEffectTest {
         }
         check(effect.isFinished(), "Death animation plays once and expires");
         check(Arrays.stream(render(effect)).allMatch(pixel -> pixel == 0), "Expired effect draws nothing");
+        BufferedImage sheet = ImageIO.read(BossDeathEffectTest.class.getResource("/project/game/effects/enemy-death.png"));
+        for (EnemyType type : new EnemyType[] {EnemyType.NORMAL, EnemyType.FAST, EnemyType.TANK}) {
+            VampireSurvivorsGame game = new VampireSurvivorsGame();
+            ((List<Weapon>) get(game, "weapons")).clear();
+            List<Enemy> enemies = (List<Enemy>) get(game, "enemies");
+            Enemy enemy = new Enemy(300, 0, type, 1);
+            enemy.hp = 0;
+            enemies.add(enemy);
+            var update = game.getClass().getDeclaredMethod("updateGame");
+            update.setAccessible(true);
+            update.invoke(game);
+            List<VisualEffect> effects = (List<VisualEffect>) get(game, "visualEffects");
+            check(effects.size() == 1 && enemies.isEmpty(), "Each regular enemy dies with exactly one effect");
+            effect = effects.get(0);
+            size = effect.radius * 2;
+            for (int tick = 0; tick < 27; tick++) {
+                BufferedImage expected = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                var g = expected.createGraphics();
+                g.drawImage(sheet.getSubimage(tick / 3 * 96, 0, 96, 96), 0, 0, size, size, null);
+                g.dispose();
+                check(Arrays.equals(render(effect), expected.getRGB(0, 0, size, size, null, 0, size)),
+                        "Regular death animation matches the nine supplied frames");
+                effect.update();
+            }
+            check(effect.isFinished() && Arrays.stream(render(effect)).allMatch(pixel -> pixel == 0),
+                    "Regular death effect finishes after one playback");
+        }
+        System.out.println("PASS: normal, fast and tank death triggers and all nine yellow explosion frames");
         System.out.println("PASS: all boss death triggers, rewards, six supplied frames and one-shot playback");
     }
 }

@@ -65,6 +65,21 @@ public class GunWeapon extends Weapon {
         }
     }
 
+    private static double contactTime(double startX, double startY, double endX, double endY, Enemy enemy) {
+        double radius = enemy.size / 2.0 + 4;
+        double offsetX = startX - enemy.x, offsetY = startY - enemy.y;
+        double outside = offsetX * offsetX + offsetY * offsetY - radius * radius;
+        if (outside <= 0) return 0;
+        double dx = endX - startX, dy = endY - startY;
+        double lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared == 0) return Double.POSITIVE_INFINITY;
+        double projection = offsetX * dx + offsetY * dy;
+        double discriminant = projection * projection - lengthSquared * outside;
+        if (discriminant < 0) return Double.POSITIVE_INFINITY;
+        double time = (-projection - Math.sqrt(discriminant)) / lengthSquared;
+        return time >= 0 && time <= 1 ? time : Double.POSITIVE_INFINITY;
+    }
+
     @Override
     public void update(Player player, List<Enemy> enemies, List<VisualEffect> visualEffects, long currentTime) {
         if (level <= 0) return;
@@ -98,16 +113,27 @@ public class GunWeapon extends Weapon {
         Iterator<Bullet> bIt = bullets.iterator();
         while (bIt.hasNext()) {
             Bullet b = bIt.next();
+            double previousX = b.x, previousY = b.y;
             b.update(currentTime);
 
             // ชนศัตรู
+            Enemy firstHit = null;
+            double firstContact = Double.POSITIVE_INFINITY;
             for (Enemy enemy : enemies) {
-                if (enemy.hp > 0 && Math.hypot(enemy.x - b.x, enemy.y - b.y) < enemy.size / 2.0 + 4) {
-                    enemy.hp -= b.damage;
-                    visualEffects.add(VisualEffect.bulletHit(b.x, b.y));
-                    b.active = false;
-                    break;
+                if (enemy.hp > 0) {
+                    double contact = contactTime(previousX, previousY, b.x, b.y, enemy);
+                    if (contact < firstContact) {
+                        firstContact = contact;
+                        firstHit = enemy;
+                    }
                 }
+            }
+            if (firstHit != null) {
+                b.x = previousX + (b.x - previousX) * firstContact;
+                b.y = previousY + (b.y - previousY) * firstContact;
+                firstHit.hp -= b.damage;
+                visualEffects.add(VisualEffect.bulletHit(b.x, b.y));
+                b.active = false;
             }
 
             // ลบเมื่อชน หรือ บินไกลเกินไป

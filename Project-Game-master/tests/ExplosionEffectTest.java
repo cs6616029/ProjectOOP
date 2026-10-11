@@ -39,6 +39,22 @@ public class ExplosionEffectTest {
         check(Arrays.stream(render(effect)).allMatch(pixel -> pixel == 0), "Expired explosion no longer draws");
     }
 
+    private static void verifyLaserAnimation(VisualEffect effect) throws Exception {
+        BufferedImage sheet = ImageIO.read(ExplosionEffectTest.class.getResource("/project/game/effects/laser-hit.png"));
+        int size = effect.radius * 2;
+        for (int tick = 0; tick < 30; tick++) {
+            BufferedImage expected = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            var g = expected.createGraphics();
+            g.drawImage(sheet.getSubimage(tick / 3 * 96, 0, 96, 96), 0, 0, size, size, null);
+            g.dispose();
+            check(Arrays.equals(render(effect), expected.getRGB(0, 0, size, size, null, 0, size)),
+                    "Laser impact frame must match supplied sprite sheet");
+            effect.update();
+        }
+        check(effect.isFinished(), "Laser impact plays once through all ten frames");
+        check(Arrays.stream(render(effect)).allMatch(pixel -> pixel == 0), "Expired laser impact no longer draws");
+    }
+
     public static void main(String[] args) throws Exception {
         Player player = new Player(0, 0);
         Enemy tank = new Enemy(80, 0, EnemyType.TANK, 1);
@@ -119,7 +135,8 @@ public class ExplosionEffectTest {
                 "Laser explosions appear at hit targets");
         laser.update(player, List.of(first, second), effects, 50010);
         check(effects.size() == 2 && first.hp == 974, "Laser does not repeat impact during cooldown");
-        verifyAnimation(effects.get(0));
+        verifyLaserAnimation(effects.get(0));
+        verifyLaserAnimation(effects.get(1));
         System.out.println("PASS: explosion sprite frames, fireball impact, dragon impact, one-shot playback and dodging");
         effects.clear();
         ring = new ShieldWeapon(5);

@@ -41,7 +41,8 @@ final class EnemyMeleeAttack {
             angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
             nextAttack = now + switch (enemy.type) {
                 case FAST, BERSERK, SHADOW -> 900;
-                case TANK, BOSS -> 1300;
+                case TANK -> 1300;
+                case BOSS -> 900;
                 default -> 1100;
             };
         }

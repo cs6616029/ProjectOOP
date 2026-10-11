@@ -68,7 +68,7 @@ public class ExplosionEffectTest {
         BossAttack fire = BossAttack.dragonFire(dragon, 0, 1000);
         player.x = 200;
         int damage = fire.update(player, 1900, effects);
-        check(damage == 12 && effects.size() == 1, "Dragon fire deals damage and creates one explosion");
+        check(damage == 16 && effects.size() == 1, "Dragon fire deals damage and creates one explosion");
         check(Math.abs(effects.get(0).x - player.x) < 1, "Explosion appears at impact instead of overshooting");
         fire.update(player, 1910, effects);
         check(effects.size() == 1, "Consumed dragon fire does not duplicate explosions");

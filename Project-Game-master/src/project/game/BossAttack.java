@@ -54,7 +54,7 @@ final class BossAttack {
     }
 
     static BossAttack swordWave(Enemy owner, double angle, long time) {
-        return new BossAttack(owner, owner.x, owner.y, angle, 220, SWORD_WAVE_RADIUS, 10, Color.WHITE, time, false, true);
+        return new BossAttack(owner, owner.x, owner.y, angle, 310, SWORD_WAVE_RADIUS, 14, Color.WHITE, time, false, true);
     }
 
     static BossAttack batEnergy(Enemy owner, double angle, long time) {
@@ -64,14 +64,14 @@ final class BossAttack {
     }
 
     static BossAttack dragonFire(Enemy owner, double angle, long time) {
-        BossAttack fire = projectile(owner, angle, 260, 14, 12, Color.ORANGE, time);
+        BossAttack fire = projectile(owner, angle, 350, 14, 16, Color.ORANGE, time);
         fire.dragonFire = true;
         return fire;
     }
 
     static BossAttack lightning(Enemy owner, double groundX, double groundY, long time) {
         BossAttack strike = new BossAttack(owner, groundX, groundY, 0, 0,
-                LIGHTNING_RADIUS, 14, Color.MAGENTA, time, false, false);
+                LIGHTNING_RADIUS, 18, Color.MAGENTA, time, false, false);
         strike.lightningStrike = true;
         strike.expiresAt = time + 7 * LIGHTNING_FRAME_DURATION;
         return strike;
@@ -99,7 +99,7 @@ final class BossAttack {
 
     static BossAttack slam(Enemy owner, double x, double y, long time) {
         return new BossAttack(owner, x, y + owner.size / 2.0, 0, 0,
-                OGRE_SLAM_RADIUS, 16, Color.ORANGE, time, true, false);
+                OGRE_SLAM_RADIUS, 22, Color.ORANGE, time, true, false);
     }
 
     int update(Player player, long time) {
@@ -154,7 +154,7 @@ final class BossAttack {
     void draw(Graphics2D graphics, double camX, double camY) {
         if (finished || owner.hp <= 0) return;
         Graphics2D g = (Graphics2D) graphics.create();
-        int sx = (int) (x - camX), sy = (int) (y - camY);
+        int sx = (int) Math.round(x - camX), sy = (int) Math.round(y - camY);
         if (batEnergy) {
             BufferedImage frame = BatAttackAnimation.PROJECTILE;
             int width = radius * 2;

@@ -84,7 +84,7 @@ public class Enemy {
                 break;
             case TANK:
                 this.size = 150;
-                this.hp = 10 + playerLevel * 2;
+                this.hp = 30 + playerLevel * 6;
                 this.speed = 1.0;
                 this.damage = 4;
                 this.scoreValue = 40;
@@ -92,8 +92,8 @@ public class Enemy {
             case BOSS:
                 this.size = 250;
                 this.hp = (60 + playerLevel * 10) * BOSS_HEALTH_MULTIPLIER;
-                this.speed = 1.3;
-                this.damage = 7;
+                this.speed = 3.0;
+                this.damage = 10;
                 this.scoreValue = 240;
                 break;
             case NORMAL:
@@ -114,6 +114,9 @@ public class Enemy {
         if (bossSkill != null && (bossSkill.isCharging() || bossSkill.isWindingUp())) return;
         double angle = Math.atan2(targetY - y, targetX - x);
         double movement = speed;
+        if (type == EnemyType.BOSS && Math.hypot(targetX - x, targetY - y) > 200) {
+            movement *= 1.65;
+        }
         if (isBat()) {
             double distance = Math.hypot(targetX - x, targetY - y);
             if (distance < 160) movement = -speed;

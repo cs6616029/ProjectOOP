@@ -8,10 +8,10 @@ import java.util.List;
 
 final class BossSkill {
     enum Kind {
-        CHARGER("White Mage", "LIGHTNING", 4500, 1000),
-        DRAGON("Dragon", "FIRE SPREAD", 4000, 900),
-        OGRE("Ogre", "GROUND SLAM", 5000, 1100),
-        SKELETON("Skeleton", "SWORD WAVE", 4200, 1000);
+        CHARGER("White Mage", "LIGHTNING", 2500, 650),
+        DRAGON("Dragon", "FIRE SPREAD", 2200, 600),
+        OGRE("Ogre", "GROUND SLAM", 2800, 750),
+        SKELETON("Skeleton", "SWORD WAVE", 2300, 600);
 
         final String name, attackName;
         final long cooldown, windup;
@@ -38,7 +38,7 @@ final class BossSkill {
     void update(Enemy boss, Player player, List<BossAttack> attacks, long time) {
         if (boss.hp <= 0) return;
         if (nextAttack < 0) {
-            nextAttack = time + 2500;
+            nextAttack = time + 1200;
         }
         if (warning) {
             if (time < releaseTime) return;

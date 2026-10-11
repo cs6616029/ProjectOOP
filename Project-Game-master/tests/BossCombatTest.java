@@ -90,7 +90,7 @@ public final class BossCombatTest {
                 BufferedImage expected = new BufferedImage(160, 160, BufferedImage.TYPE_INT_ARGB);
                 graphics = expected.createGraphics();
                 graphics.translate(80, 80);
-                graphics.rotate(Math.atan2(Math.sin(angle), Math.cos(angle)) + Math.PI);
+                graphics.rotate(Math.atan2((double) get(flame, "velocityY"), (double) get(flame, "velocityX")) + Math.PI);
                 int frameWidth = blueSheet.getWidth() / 4;
                 int height = 64 * blueSheet.getHeight() / frameWidth;
                 graphics.drawImage(blueSheet.getSubimage(frameIndex % 4 * frameWidth, 0,
@@ -102,13 +102,22 @@ public final class BossCombatTest {
             }
         }
         for (BossSkill.Kind kind : BossSkill.Kind.values()) {
+            Enemy chaser = new Enemy(0, 0, EnemyType.BOSS, 1, kind);
+            chaser.update(500, 0);
+            check(Math.abs(chaser.x - 4.95) < 0.0001, kind + " sprints faster than the player at long range");
+            double chasedX = chaser.x;
+            chaser.update(180, 0);
+            check(Math.abs(chaser.x - chasedX - 3.0) < 0.0001, kind + " keeps faster pursuit nearby");
             Enemy boss = new Enemy(0, 0, EnemyType.BOSS, 1, kind);
             Player target = new Player(300, 0);
             List<BossAttack> attacks = new ArrayList<>();
             boss.updateBossSkill(target, attacks, 1000);
-            boss.updateBossSkill(target, attacks, 3500);
+            boss.updateBossSkill(target, attacks, 2199);
+            check(!((BossSkill) get(boss, "bossSkill")).isWindingUp(), kind + " waits for the initial preparation delay");
+            boss.updateBossSkill(target, attacks, 2200);
+            check(((BossSkill) get(boss, "bossSkill")).isWindingUp(), kind + " starts its first warning after 1.2 seconds");
             check(attacks.isEmpty(), kind + " must warn before attacking");
-            boss.updateBossSkill(target, attacks, 3500 + kind.windup - 1);
+            boss.updateBossSkill(target, attacks, 2200 + kind.windup - 1);
             check(attacks.isEmpty(), kind + " cannot attack before windup ends");
             double oldX = boss.x;
             boss.update(target.x, target.y);
@@ -122,17 +131,17 @@ public final class BossCombatTest {
                     : (kind == BossSkill.Kind.OGRE ? 337 + boss.size / 2 : 337);
             check(warning.getRGB(warningX, warningY) != 0,
                     kind + " must draw warning area at the attack location");
-            long release = 3500 + kind.windup;
+            long release = 2200 + kind.windup;
             boss.updateBossSkill(target, attacks, release);
             switch (kind) {
                 case CHARGER:
                     check(attacks.size() == 1, "White mage casts one lightning strike");
                     check(attacks.get(0).update(target, release + 139) == 0,
                             "Lightning deals no damage before the visible strike frame");
-                    check(attacks.get(0).update(target, release + 140) == 14
+                    check(attacks.get(0).update(target, release + 140) == 18
                             && attacks.get(0).update(target, release + 150) == 0,
                             "Lightning damages its target once when it strikes");
-                    check(boss.x == oldX && boss.getContactDamage() == 7, "White mage casts instead of charging");
+                    check(boss.x == oldX && boss.getContactDamage() == 10, "White mage casts instead of charging");
                     BossAttack dodgedLightning = BossAttack.lightning(boss, target.x,
                             target.y + target.getRenderSize() / 2.0, release);
                     target.y = 400;
@@ -141,7 +150,7 @@ public final class BossCombatTest {
                     break;
                 case DRAGON:
                     check(attacks.size() == 3, "Dragon fires three projectiles");
-                    check(attacks.get(1).update(target, release + 1200) == 12,
+                    check(attacks.get(1).update(target, release + 1200) == 16,
                             "Dragon's central fireball hits a stationary target");
                     target.y = 500;
                     check(attacks.get(0).update(target, release + 1200) == 0, "Dragon fire can be dodged");
@@ -151,11 +160,11 @@ public final class BossCombatTest {
                     check(attacks.get(0).update(target, release) == 0, "Outside slam is safe");
                     BossAttack slam = BossAttack.slam(boss, 0, 0, release);
                     target.x = 150;
-                    check(slam.update(target, release) == 16 && slam.update(target, release + 10) == 0,
+                    check(slam.update(target, release) == 22 && slam.update(target, release + 10) == 0,
                             "Slam hits once inside its radius");
                     target.x = 280;
                     target.y = boss.size / 2.0 - target.getRenderSize() / 2.0;
-                    check(BossAttack.slam(boss, 0, 0, release).update(target, release) == 16,
+                    check(BossAttack.slam(boss, 0, 0, release).update(target, release) == 22,
                             "Expanded ground slam hits at the wider edge");
                     target.x = 301;
                     check(BossAttack.slam(boss, 0, 0, release).update(target, release) == 0,
@@ -175,13 +184,19 @@ public final class BossCombatTest {
                             .anyMatch(pixel -> (pixel >>> 24) != 0), "Attached sword-wave sprite renders in all directions");
                     target.x = 0;
                     target.y = 300;
-                    check(attacks.get(2).update(target, release + 1400) == 10,
+                    check(attacks.get(2).update(target, release + 1400) == 14,
                             "Skeleton has a damaging vertical sword wave");
                     break;
             }
             int count = attacks.size();
             boss.updateBossSkill(target, attacks, release + 1500);
             check(attacks.size() == count, kind + " respects cooldown");
+            boss.updateBossSkill(target, attacks, release + kind.cooldown - 1);
+            check(!((BossSkill) get(boss, "bossSkill")).isWindingUp(), kind + " cannot prepare another cast early");
+            boss.updateBossSkill(target, attacks, release + kind.cooldown);
+            check(((BossSkill) get(boss, "bossSkill")).isWindingUp(), kind + " prepares the next cast on cooldown");
+            boss.updateBossSkill(target, attacks, release + kind.cooldown + kind.windup);
+            check(attacks.size() == count * 2, kind + " releases another full skill volley");
         }
 
         Enemy owner = new Enemy(0, 0, EnemyType.BOSS, 1, BossSkill.Kind.DRAGON);
@@ -199,7 +214,7 @@ public final class BossCombatTest {
         check(wave.update(target, 1900) == 0, "Player can dodge outside sword-wave width");
         wave = BossAttack.swordWave(owner, 0, 1000);
         target.y = 80;
-        check(wave.update(target, 1900) == 10, "Sword-wave collision matches its larger width");
+        check(wave.update(target, 1900) == 14, "Sword-wave collision matches its larger width");
         bolt = BossAttack.projectile(owner, 0, 500, 10, 12, java.awt.Color.ORANGE, 1000);
         check(bolt.update(target, 4500) == 0 && bolt.isFinished(), "Missed projectiles expire");
 
@@ -227,7 +242,7 @@ public final class BossCombatTest {
             hazards.add(BossAttack.slam(owner, player.x, player.y, now));
             hazards.add(BossAttack.slam(owner, player.x, player.y, now));
             call(game, "updateGame");
-            check(player.hp == 64, "Simultaneous boss hits share invincibility frames");
+            check(player.hp == 58, "Simultaneous boss hits share invincibility frames");
             LevelManager levels = (LevelManager) get(game, "levelManager");
             levels.gainXP(10, player, weapons, new ArrayList<>());
             int hp = player.hp;

@@ -54,7 +54,11 @@ public class WeaponScalingTest {
                 if (kind == 7) target.size = 1000;
                 List<VisualEffect> effects = new ArrayList<>();
                 int hits = kind == 3 ? 2 : (kind == 7 ? level : 1);
-                if (kind == 6) {
+                if (kind == 5) {
+                    current.update(player, List.of(target), effects, 10000);
+                    check(target.hp == 10000, "Frost hammer waits until slam");
+                    current.update(player, List.of(target), effects, 10480);
+                } else if (kind == 6) {
                     current.update(player, List.of(target), effects, 10000);
                     check(target.hp == 10000, "Justice sword waits until impact");
                     current.update(player, List.of(target), effects, 10320);

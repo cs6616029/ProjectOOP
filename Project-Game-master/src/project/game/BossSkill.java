@@ -35,6 +35,11 @@ final class BossSkill {
     boolean isCharging() { return false; }
     boolean isWindingUp() { return warning; }
 
+    void cancelUntil(long time) {
+        warning = false;
+        nextAttack = Math.max(nextAttack, time);
+    }
+
     void update(Enemy boss, Player player, List<BossAttack> attacks, long time) {
         if (boss.hp <= 0) return;
         if (nextAttack < 0) {

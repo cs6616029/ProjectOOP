@@ -18,7 +18,14 @@ public class VisualEffect {
     private boolean batHit;
     private boolean fireStaffHit;
     private boolean holyNova;
+    private boolean frostImpact;
     private double fireStaffAngle;
+
+    public static VisualEffect frostImpact(double x, double y, int radius) {
+        VisualEffect effect = new VisualEffect(x, y, radius, Color.CYAN, 44);
+        effect.frostImpact = true;
+        return effect;
+    }
 
     private static final class HolyNovaAnimation {
         static final SpriteAnimation SPRITE = SpriteAnimation.load("/project/game/effects/holy-nova.png", 10);
@@ -125,6 +132,15 @@ public class VisualEffect {
         if (isFinished()) return;
         int sx = (int) (x - camX);
         int sy = (int) (y - camY);
+        if (frostImpact) {
+            Graphics2D impact = (Graphics2D) g.create();
+            impact.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            impact.drawImage(FrostHammerAnimation.IMPACT.frameAt(currentFrame, 4),
+                    sx - radius, sy - radius, radius * 2, radius, null);
+            impact.dispose();
+            return;
+        }
         if (holyNova) {
             Graphics2D impact = (Graphics2D) g.create();
             impact.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,

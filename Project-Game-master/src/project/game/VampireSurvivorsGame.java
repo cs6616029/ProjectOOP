@@ -332,6 +332,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
                 continue;
             }
 
+            enemy.updateStatus(currentTime);
             enemy.updateCombatMovement(player);
 
             if (enemy.type != EnemyType.BOSS && Math.hypot(enemy.x - player.x, enemy.y - player.y) > 1200) {

@@ -13,6 +13,11 @@ final class EnemyMeleeAttack {
 
     boolean isActive() { return started >= 0; }
 
+    void cancelUntil(long time) {
+        started = -1;
+        nextAttack = Math.max(nextAttack, time);
+    }
+
     private double reach(Enemy enemy, Player player) {
         return enemy.size * 0.25 + player.size * 0.20 + 18;
     }

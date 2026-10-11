@@ -40,6 +40,39 @@ public class Enemy {
     private final List<DamageNumber> pendingDamageNumbers = new ArrayList<>();
     private int damageNumberSequence;
     private final EnemyMeleeAttack meleeAttack = new EnemyMeleeAttack();
+    private long statusTime, frozenUntil;
+    private int frostHits;
+    private BufferedImage frozenFrame;
+    private static final java.util.Map<BufferedImage, BufferedImage> FROZEN_FRAMES = new java.util.IdentityHashMap<>();
+
+    void updateStatus(long time) { statusTime = time; }
+
+    boolean isFrozen() { return hp > 0 && statusTime < frozenUntil; }
+
+    void applyFrostHit(long time) {
+        updateStatus(time);
+        if (hp <= 0) return;
+        if (type == EnemyType.BOSS && ++frostHits < 2) return;
+        frostHits = 0;
+        if (!isFrozen()) frozenFrame = sprite.frameAt(time, 110);
+        frozenUntil = time + (type == EnemyType.BOSS ? 1200 : 2000);
+        meleeAttack.cancelUntil(frozenUntil + 200);
+        if (bossSkill != null) bossSkill.cancelUntil(frozenUntil + 500);
+        nextRangedAttack = Math.max(nextRangedAttack, frozenUntil + 500);
+    }
+
+    private static BufferedImage iceTint(BufferedImage source) {
+        return FROZEN_FRAMES.computeIfAbsent(source, frame -> {
+            BufferedImage tinted = new BufferedImage(frame.getWidth(), frame.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            for (int y = 0; y < frame.getHeight(); y++) for (int x = 0; x < frame.getWidth(); x++) {
+                int pixel = frame.getRGB(x, y);
+                int brightness = (((pixel >> 16) & 255) + ((pixel >> 8) & 255) + (pixel & 255)) / 3;
+                tinted.setRGB(x, y, (pixel & 0xff000000) | ((brightness / 4) << 16)
+                        | ((100 + brightness / 2) << 8) | (170 + brightness / 3));
+            }
+            return tinted;
+        });
+    }
 
     void takeDamage(int amount) {
         if (hp <= 0 || amount <= 0) return;
@@ -109,6 +142,7 @@ public class Enemy {
     }
 
     public void update(double targetX, double targetY) {
+        if (isFrozen()) return;
         if (meleeAttack.isActive()) return;
         facingLeft = targetX < x;
         if (bossSkill != null && (bossSkill.isCharging() || bossSkill.isWindingUp())) return;
@@ -140,20 +174,27 @@ public class Enemy {
     }
 
     void updateBossSkill(Player player, List<BossAttack> attacks, long time) {
+        updateStatus(time);
+        if (isFrozen()) return;
         if (bossSkill != null && !meleeAttack.isActive()) bossSkill.update(this, player, attacks, time);
     }
 
     void updateCombatMovement(Player player) {
+        if (isFrozen()) return;
         if (!meleeAttack.isActive()) facingLeft = player.x < x;
         if (!isBat() && Math.hypot(x - player.x, y - player.y) <= size * 0.25 + player.size * 0.20 + 14) return;
         update(player.x, player.y);
     }
 
     int updateMeleeAttack(Player player, long time) {
+        updateStatus(time);
+        if (isFrozen()) return 0;
         return meleeAttack.update(this, player, time, bossSkill != null && bossSkill.isWindingUp());
     }
 
     void updateRangedAttack(Player player, List<BossAttack> attacks, long time) {
+        updateStatus(time);
+        if (isFrozen()) return;
         if (!isBat() || hp <= 0) return;
         // Use gameplay time so pausing also pauses the firing cooldown.
         if (nextRangedAttack < 0) nextRangedAttack = time + 1000;
@@ -168,6 +209,7 @@ public class Enemy {
     }
 
     void drawBossWarning(Graphics2D g, double camX, double camY) {
+        if (isFrozen()) return;
         if (bossSkill != null && hp > 0) bossSkill.drawWarning(g, camX, camY);
     }
 
@@ -175,6 +217,7 @@ public class Enemy {
         int screenX = (int) (x - camX + meleeAttack.offsetX());
         int screenY = (int) (y - camY + meleeAttack.offsetY());
         BufferedImage frame = getSprite().frameAt(meleeAttack.isActive() ? 0 : System.currentTimeMillis(), 110);
+        if (isFrozen()) frame = iceTint(frozenFrame);
         int renderHeight = (int) Math.round(size * meleeAttack.squash());
         int top = screenY + size / 2 - renderHeight;
         if (facingLeft) {

@@ -43,7 +43,10 @@ public class DamageNumberTest {
                 if (kind == 4) target.size = 150;
                 if (kind == 7) target.size = 1000;
                 List<VisualEffect> effects = new ArrayList<>();
-                if (kind == 6) {
+                if (kind == 5) {
+                    weapon.update(player, List.of(target), effects, 10000);
+                    weapon.update(player, List.of(target), effects, 10480);
+                } else if (kind == 6) {
                     weapon.update(player, List.of(target), effects, 10000);
                     weapon.update(player, List.of(target), effects, 10320);
                 } else {

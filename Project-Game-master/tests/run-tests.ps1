@@ -23,6 +23,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Level-up option checks failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Level-up animation checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.SwordOfJusticeTest
 if ($LASTEXITCODE -ne 0) { throw 'Sword of Justice checks failed' }
+& java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.FrostHammerTest
+if ($LASTEXITCODE -ne 0) { throw 'Frost Hammer checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.WeaponScalingTest
 if ($LASTEXITCODE -ne 0) { throw 'Weapon scaling checks failed' }
 & java '-Djava.awt.headless=true' '--class-path' "$compileDir;$sourceDir" project.game.LaserTravelTest

@@ -46,7 +46,7 @@ public class EnemyDeathSoundTest {
         }
         List<Enemy> fixtures = new ArrayList<>(); List<SoundEffects.Effect> expected = new ArrayList<>();
         Object[] normalSprites = (Object[]) field(Enemy.class, "NORMAL_SPRITES").get(null);
-        SoundEffects.Effect[] normalSounds = {SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.DOG_DEATH,
+        SoundEffects.Effect[] normalSounds = {SoundEffects.Effect.SLIME_DEATH, SoundEffects.Effect.DOG_DEATH,
                 SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.ENEMY_DEATH, SoundEffects.Effect.GOBLIN_DEATH};
         for (int index = 0; index < normalSprites.length; index++) {
             Enemy enemy = new Enemy(0, 0, EnemyType.NORMAL, 1);

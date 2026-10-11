@@ -51,6 +51,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
     private final List<DamageNumber> damageNumbers = new ArrayList<>();
     private final List<BossAttack> bossAttacks = new ArrayList<>();
     private final List<Weapon> weapons = new ArrayList<>();
+    private StrongBoyPunch strongBoyPunch;
     private final List<PassiveItem> passiveItems = new ArrayList<>();
 
     private final LevelManager levelManager = new LevelManager();
@@ -165,6 +166,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         damageNumbers.clear();
         bossAttacks.clear();
         weapons.clear();
+        strongBoyPunch = characterType == Player.CharacterType.STRONG_BOY ? new StrongBoyPunch() : null;
         passiveItems.clear();
         activeKeys.clear();
 
@@ -283,6 +285,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (Weapon weapon : weapons) {
             weapon.update(player, enemies, visualEffects, currentTime);
         }
+        if (strongBoyPunch != null) strongBoyPunch.update(player, enemies, currentTime);
 
         boolean bossAlive = hasLivingBoss();
         spawnInterval = SpawnBalance.intervalMillis(elapsedSeconds, levelManager.getLevel(), bossAlive);
@@ -466,6 +469,7 @@ public class VampireSurvivorsGame extends JPanel implements Runnable, KeyListene
         for (VisualEffect ve : visualEffects) ve.draw(dbg, cameraX, cameraY);
 
         player.draw(dbg, cameraX, cameraY);
+        if (strongBoyPunch != null) strongBoyPunch.draw(dbg, cameraX, cameraY);
         for (Weapon weapon : weapons) {
             if (weapon instanceof LaserWeapon) weapon.draw(dbg, player, cameraX, cameraY);
         }

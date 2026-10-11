@@ -8,6 +8,10 @@ public class GarlicWeapon extends Weapon {
     private static final SpriteAnimation AURA_ANIMATION = SpriteAnimation.load(
             "/project/game/weapons/Aurafarming/Effect-Aurafarming.png", 4);
     private final long baseDmgInterval = 200;
+    private static final int BASE_DURATION_MILLIS = 5000, DURATION_PER_LEVEL = 1000;
+    private long cycleDurationMillis;
+    private long activeUntil, nextActivation;
+    private boolean active;
     private long lastDmgTime;
     private long animationStartTime = -1;
     private long animationTime;
@@ -26,16 +30,28 @@ public class GarlicWeapon extends Weapon {
 
     @Override
     public String getUpgradeDescription() {
-        return super.getUpgradeDescription() + " | " + upgradeStat("Radius", baseRadius, radiusPerLevel);
+        return super.getUpgradeDescription() + " | " + upgradeStat("Radius", baseRadius, radiusPerLevel)
+                + " | " + upgradeStat("Active/Rest (s)", 5, 1);
     }
 
     @Override
     public void update(Player player, List<Enemy> enemies, List<VisualEffect> visualEffects, long currentTime) {
-        if (level <= 0) return;
-        if (animationStartTime < 0) animationStartTime = currentTime;
+        if (level <= 0) { active = false; return; }
+        long effectiveInterval = Math.max(1, (long) (baseDmgInterval * player.attackCooldownMultiplier));
+        if (active && currentTime >= activeUntil) {
+            active = false;
+            nextActivation = activeUntil + Math.max(1, (long) (cycleDurationMillis * player.attackCooldownMultiplier));
+        }
+        if (!active) {
+            if (currentTime < nextActivation) return;
+            active = true;
+            animationStartTime = currentTime;
+            cycleDurationMillis = scaleStat(BASE_DURATION_MILLIS, DURATION_PER_LEVEL);
+            activeUntil = currentTime + cycleDurationMillis;
+            lastDmgTime = currentTime - effectiveInterval;
+        }
         animationTime = Math.max(0, currentTime - animationStartTime);
 
-        long effectiveInterval = (long) (baseDmgInterval * player.attackCooldownMultiplier);
         if (currentTime - lastDmgTime >= effectiveInterval) {
             double auraRadius = getAuraRadius();
             int damage = getDamage();
@@ -55,7 +71,7 @@ public class GarlicWeapon extends Weapon {
 
     @Override
     public void draw(Graphics2D g, Player player, double camX, double camY) {
-        if (level <= 0) return;
+        if (level <= 0 || !active) return;
         int sx = (int) (player.x - camX);
         int sy = (int) (player.y - camY);
         int auraRadius = getAuraRadius();

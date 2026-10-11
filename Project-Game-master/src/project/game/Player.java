@@ -86,6 +86,7 @@ public class Player {
     public int maxHp = 80;
 
     public double lastDirX = 1.0;
+    double attackOffsetX, attackOffsetY;
     public double lastDirY = 0.0;
     private boolean moving;
     
@@ -149,8 +150,8 @@ public class Player {
     }
 
     public void draw(Graphics2D g, double camX, double camY) {
-        int screenX = (int) (x - camX);
-        int screenY = (int) (y - camY);
+        int screenX = (int) (x - camX + attackOffsetX);
+        int screenY = (int) (y - camY + attackOffsetY);
         int renderSize = getRenderSize();
         long hurtAge = gameTimeMillis - lastDamageTime;
         boolean isInvincible = hurtAge >= 0 && hurtAge < invincibilityDuration;
